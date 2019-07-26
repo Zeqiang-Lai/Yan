@@ -45,6 +45,11 @@ public class Lexer {
         ch  = skipWhitespace(ch);
         // Encounter eof.
         if(ch == '\0') return new Token(EOF, "", null, line);
+        // Encounter comment
+        if(ch == '/') ch = skipComment();
+        // After removing comment, there might be new white space.
+        ch  = skipWhitespace(ch);
+
         start = source.getOffset()-1;
 
         if(Character.isLetter(ch) || ch == '_') return identifier();
@@ -83,6 +88,29 @@ public class Lexer {
 
         errorCollector.add(new CompilerError("unexpected character."));
         return makeToken(UNKNOWN);
+    }
+
+    private char skipComment() {
+        char ch = 0;
+        if(source.peek('/')) {
+            ch = source.next();
+            while(ch != '\n')
+                ch = source.next();
+            ch = source.next();
+        } else if(source.peek('*')) {
+            ch = source.next();
+            ch = source.next();
+            while(ch != '\0') {
+                while (ch != '*')
+                    ch = source.next();
+                ch = source.next();
+                if(ch == '/') {
+                    ch = source.next();
+                    break;
+                }
+            }
+        }
+        return ch;
     }
 
     // Skip any white space and count line number.
