@@ -1,5 +1,8 @@
 package frontend;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public enum TokenType {
     // Single-character tokens.
     LEFT_PAREN, RIGHT_PAREN,
@@ -32,4 +35,17 @@ public enum TokenType {
 
     EOF,
     UNKNOWN;
+
+    static public Map<TokenType, String> tokenValue = new HashMap<>();
+
+    static {
+        tokenValue.put(LEFT_PAREN, "(");
+        tokenValue.put(RIGHT_PAREN, ")");
+        tokenValue.put(LEFT_BRACE, "{");
+        tokenValue.put(RIGHT_BRACE, "}");
+//        tokenValue.put(LEFT_BRACKET, "[");
+//        tokenValue.put(RIGHT_BRACKET, "]");
+        tokenValue.put(SEMICOLON, ";");
+        tokenValue.put(ASSIGN, "=");
+    }
 }
