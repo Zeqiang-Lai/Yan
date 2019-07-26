@@ -1,4 +1,7 @@
 package frontend;
+import error.CompilerError;
+import error.ErrorCollector;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -11,6 +14,8 @@ public class Lexer {
 
     private static final Map<String, TokenType> keywords;
     private static final Map<String, TokenType> data_types;
+
+    private ErrorCollector errorCollector = ErrorCollector.getInstance();
 
     static {
         keywords = new HashMap<>();
@@ -76,7 +81,7 @@ public class Lexer {
             case ':': return makeToken(COLON);
         }
 
-        // TODO: log error.
+        errorCollector.add(new CompilerError("unexpected character."));
         return makeToken(UNKNOWN);
     }
 
