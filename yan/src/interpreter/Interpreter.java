@@ -14,6 +14,10 @@ import static frontend.TokenType.*;
 public class Interpreter implements ExprNode.Visitor<Object>, StmtNode.Visitor<Object> {
     private Environment environment = new Environment();
     private ErrorCollector errorCollector = ErrorCollector.getInstance();
+
+    private boolean breakloop = false;
+    private boolean exitBlock = false;
+
     // region: Interface
 
     public void interpret(List<StmtNode> statements) {
@@ -44,6 +48,7 @@ public class Interpreter implements ExprNode.Visitor<Object>, StmtNode.Visitor<O
             this.environment = environment;
             for (StmtNode statement : statements) {
                 execute(statement);
+                if(exitBlock) break;
             }
         } finally {
             this.environment = previous;
@@ -149,6 +154,10 @@ public class Interpreter implements ExprNode.Visitor<Object>, StmtNode.Visitor<O
                 return (Double) left < (Double) right;
             case LESS_EQUAL:
                 return (Double) left <= (Double) right;
+            case EQUAL:
+                return left.equals(right);
+            case NOT_EQUAL:
+                return !left.equals(right);
         }
         return null;
     }
@@ -251,16 +260,26 @@ public class Interpreter implements ExprNode.Visitor<Object>, StmtNode.Visitor<O
 
     @Override
     public String visitWhileStmt(StmtNode.While stmt) {
+        while (isTruthy(evaluate(stmt.cond))) {
+            execute(stmt.body);
+            exitBlock = false;
+            if(breakloop)
+                break;
+        }
+        breakloop = false;
         return null;
     }
 
     @Override
     public String visitBreakStmt(StmtNode.Break stmt) {
+        exitBlock = true;
+        breakloop = true;
         return null;
     }
 
     @Override
     public String visitContinueStmt(StmtNode.Continue stmt) {
+        exitBlock = true;
         return null;
     }
 
