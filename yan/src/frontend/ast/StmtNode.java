@@ -12,7 +12,7 @@ public abstract class StmtNode {
         R visitExpressionStmt(Expression stmt);
         R visitFunctionStmt(Function stmt);
         R visitIfStmt(If stmt);
-//        R visitPrintStmt(Print stmt);
+        R visitPrintStmt(Print stmt);
         R visitReturnStmt(Return stmt);
         R visitVarStmt(Var stmt);
         R visitWhileStmt(While stmt);
@@ -22,16 +22,31 @@ public abstract class StmtNode {
 
     abstract <R> R accept(Visitor<R> visitor);
 
+    static public class Print extends StmtNode {
+        ExprNode value;
+
+        public Print(ExprNode value) {
+            this.value = value;
+        }
+
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitPrintStmt(this);
+        }
+    }
+
     static public class Function extends StmtNode {
         final Token name;
         final List<Token> params;
         final List<Token> types;
+        final Token return_type;
         final Block body;
 
-        public Function(Token name, List<Token> params, List<Token> types, Block body) {
+        public Function(Token name, List<Token> params, List<Token> types, Token return_type, Block body) {
             this.name = name;
             this.params = params;
             this.types = types;
+            this.return_type = return_type;
             this.body = body;
         }
 

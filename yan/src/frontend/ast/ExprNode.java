@@ -8,17 +8,19 @@ public class ExprNode {
     interface Visitor<R> {
         R visitAssignExpr(Assign expr);
         R visitBinaryExpr(Binary expr);
-        R visitCallExpr(Call expr);
+        R visitCallExpr(FunCall expr);
         R visitGroupingExpr(Grouping expr);
         R visitLiteralExpr(Literal expr);
         R visitLogicalExpr(Logical expr);
+        R visitRelationExpr(Relation expr);
         R visitUnaryExpr(Unary expr);
         R visitVariableExpr(Variable expr);
     }
 
-    static class Assign extends ExprNode {
-        Assign(Token name, ExprNode value) {
+    public static class Assign extends ExprNode {
+        public Assign(Token name, Token type, ExprNode value) {
             this.name = name;
+            this.type = type;
             this.value = value;
         }
 
@@ -27,11 +29,12 @@ public class ExprNode {
         }
 
         final Token name;
+        final Token type;
         final ExprNode value;
     }
 
-    static class Binary extends ExprNode {
-        Binary(ExprNode left, Token operator, ExprNode right) {
+    public static class Binary extends ExprNode {
+        public Binary(ExprNode left, Token operator, ExprNode right) {
             this.left = left;
             this.operator = operator;
             this.right = right;
@@ -46,8 +49,24 @@ public class ExprNode {
         final ExprNode right;
     }
 
-    static class Call extends ExprNode {
-        Call(ExprNode callee, Token paren, List<ExprNode> arguments) {
+    public static class Relation extends ExprNode {
+        public Relation(ExprNode left, Token operator, ExprNode right) {
+            this.left = left;
+            this.operator = operator;
+            this.right = right;
+        }
+
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitRelationExpr(this);
+        }
+
+        final ExprNode left;
+        final Token operator;
+        final ExprNode right;
+    }
+
+    public static class FunCall extends ExprNode {
+        public FunCall(ExprNode callee, Token paren, List<ExprNode> arguments) {
             this.callee = callee;
             this.paren = paren;
             this.arguments = arguments;
@@ -62,8 +81,8 @@ public class ExprNode {
         final List<ExprNode> arguments;
     }
 
-    static class Grouping extends ExprNode {
-        Grouping(ExprNode expression) {
+    public static class Grouping extends ExprNode {
+        public Grouping(ExprNode expression) {
             this.expression = expression;
         }
 
@@ -74,8 +93,8 @@ public class ExprNode {
         final ExprNode expression;
     }
 
-    static class Literal extends ExprNode {
-        Literal(Object value) {
+    public static class Literal extends ExprNode {
+        public Literal(Object value) {
             this.value = value;
         }
 
@@ -86,8 +105,8 @@ public class ExprNode {
         final Object value;
     }
 
-    static class Logical extends ExprNode {
-        Logical(ExprNode left, Token operator, ExprNode right) {
+    public static class Logical extends ExprNode {
+        public Logical(ExprNode left, Token operator, ExprNode right) {
             this.left = left;
             this.operator = operator;
             this.right = right;
@@ -102,8 +121,8 @@ public class ExprNode {
         final ExprNode right;
     }
 
-    static class Unary extends ExprNode {
-        Unary(Token operator, ExprNode right) {
+    public static class Unary extends ExprNode {
+        public Unary(Token operator, ExprNode right) {
             this.operator = operator;
             this.right = right;
         }
@@ -116,8 +135,8 @@ public class ExprNode {
         final ExprNode right;
     }
 
-    static class Variable extends ExprNode {
-        Variable(Token name) {
+    public static class Variable extends ExprNode {
+        public Variable(Token name) {
             this.name = name;
         }
 
@@ -125,6 +144,6 @@ public class ExprNode {
             return visitor.visitVariableExpr(this);
         }
 
-        final Token name;
+        public final Token name;
     }
 }

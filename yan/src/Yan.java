@@ -1,5 +1,6 @@
 import error.ErrorCollector;
 import frontend.*;
+import frontend.ast.StmtNode;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,6 +9,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Vector;
 
 public class Yan {
@@ -16,14 +18,14 @@ public class Yan {
         return new String(encoded, encoding);
     }
 
-    void run(String source_path, String out) {
+    private void run(String source_path, String out) {
         File f = new File(source_path);
         String file_name = f.getName();
         if(out == null) out = file_name;
 
         String source = null;
         try {
-            source = readFile(source_path, Charset.forName("utf-8"));
+            source = readFile(source_path, StandardCharsets.UTF_8);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -32,6 +34,7 @@ public class Yan {
         errorCollector.setFile_name(file_name);
 
         Vector<Token> tokens = new Vector<>();
+        assert source != null;
         SourceBuffer buff = new SourceBuffer(source);
         Lexer lexer = new Lexer(buff);
         Token token = lexer.scan();
@@ -46,14 +49,14 @@ public class Yan {
         }
 
         Parser parser = new Parser(tokens);
-//        StmtNode.CompilationUnit tree = parser.parse();
+        List<StmtNode> statements = parser.parse();
 
         if (errorCollector.hasError()) {
             errorCollector.show();
         }
     }
 
-    static void printUsage() {
+    private static void printUsage() {
         String usage = "OVERVIEW: Yan Compiler\n\n" +
                 "USAGE: Yan [options] <input>\n\n" +
                 "OPTIONS:\n" +
