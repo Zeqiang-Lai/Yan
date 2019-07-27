@@ -300,7 +300,7 @@ public class Parser {
     }
 
     private ExprNode parsePrimary() throws ParseError {
-        if (match(INTEGER_CONSTANT, FLOAT_CONSTANT, STRING_CONSTANT))
+        if (match(INTEGER_CONSTANT, FLOAT_CONSTANT, STRING_CONSTANT, BOOL_CONSTANT))
             return new ExprNode.Literal(previous().literal);
         if (match(IDENTIFIER))
             return new ExprNode.Variable(previous());

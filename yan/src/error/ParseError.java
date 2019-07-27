@@ -14,10 +14,10 @@ public class ParseError extends CompilerError {
     public ParseError(int parsed, String msg, List<Token> tokens, ErrorType type) {
         super(null);
 
-        if(type == ErrorType.BEFORE)
+        if (type == ErrorType.BEFORE)
             this.parsed_amount = parsed;
         else
-            this.parsed_amount = parsed-1;
+            this.parsed_amount = parsed - 1;
 
         Token token = tokens.get(parsed_amount);
 
@@ -27,7 +27,7 @@ public class ParseError extends CompilerError {
 //            builder.append(bold_color);
 //            builder.append(red_color);
 //        }
-//        builder.append(" error: ");
+        builder.append(" error: ");
 //        if(!is_windows) {
 //            builder.append(reset_color);
 //            builder.append(bold_color);
@@ -51,23 +51,22 @@ public class ParseError extends CompilerError {
         // TODO: get source line from lexer.
         StringBuilder line = new StringBuilder();
         int left = parsed_amount;
-        while(left >= 0 && tokens.get(left).line == token.line) left -= 1;
+        while (left >= 0 && tokens.get(left).line == token.line) left -= 1;
         left += 1;
         int right = parsed_amount;
         int col = 0;
-        for(int i=left; i<=right; i++) {
+        for (int i = left; i <= right; i++) {
             line.append(tokens.get(i).lexeme).append(" ");
-            if(i <= parsed_amount)
-                col += tokens.get(i).lexeme.length()+1;
+            if (i <= parsed_amount)
+                col += tokens.get(i).lexeme.length() + 1;
         }
         builder.append(line.toString()).append("\n");
-        for(int i=0; i<col+2; ++i)
-            builder.append(" ");
-        if(type == ErrorType.AFTER)
+        builder.append(" ".repeat(Math.max(0, col + 2)));
+        if (type == ErrorType.AFTER)
             builder.append(" ");
 
 //        if(is_windows)
-//            builder.append("^");
+        builder.append("^");
 //        else
 //            builder.append(green_color + "^" + reset_color);
 

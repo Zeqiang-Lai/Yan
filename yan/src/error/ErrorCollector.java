@@ -39,4 +39,8 @@ public class ErrorCollector {
         }
         System.out.println(errors.size() + " errors generated.");
     }
+
+    public void clear() {
+        errors.clear();
+    }
 }

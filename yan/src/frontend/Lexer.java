@@ -33,6 +33,7 @@ public class Lexer {
         data_types.put("int",     INT);
         data_types.put("float", FLOAT);
         data_types.put("char",  CHAR);
+        data_types.put("bool",  BOOL);
     }
 
     public Lexer(SourceBuffer buff) {
@@ -46,7 +47,7 @@ public class Lexer {
         // Encounter eof.
         if(ch == '\0') return new Token(EOF, "", null, line);
         // Encounter comment
-        if(ch == '/') ch = skipComment();
+        if(ch == '/') ch = skipComment(ch);
         // After removing comment, there might be new white space.
         ch  = skipWhitespace(ch);
 
@@ -55,7 +56,7 @@ public class Lexer {
         if(Character.isLetter(ch) || ch == '_') return identifier();
         if(Character.isDigit((ch))) return number();
 //        if(ch == '\'') return charLiteral();
-//        if(ch == '\"') return stringLiteral();
+        if(ch == '\"') return stringLiteral();
 
         switch (ch) {
             case '+': return makeToken(source.peek('=') ? ADD_ASSIGN : ADD);
@@ -90,8 +91,7 @@ public class Lexer {
         return makeToken(UNKNOWN);
     }
 
-    private char skipComment() {
-        char ch = 0;
+    private char skipComment(char ch) {
         if(source.peek('/')) {
             ch = source.next();
             while(ch != '\n')
@@ -137,6 +137,12 @@ public class Lexer {
         } while(Character.isLetterOrDigit(ch) || ch == '_');
         source.back();
         String token_value = source.substring(start, source.getOffset());
+
+        if(token_value.equals("true"))
+            return new Token(BOOL_CONSTANT, token_value, true, line);
+        if(token_value.equals("false"))
+            return new Token(BOOL_CONSTANT, token_value, false, line);
+
         if(keywords.containsKey(token_value))
             return new Token(keywords.get(token_value), token_value, null, line);
         else return new Token(data_types.getOrDefault(token_value, IDENTIFIER), token_value, null, line);
@@ -179,19 +185,18 @@ public class Lexer {
 //        }
 //    }
 
-//    private Token stringLiteral() {
-//        char ch;
-//        ch = source.next();
-//        while(ch != '\"' && ch != '\n' && ch != '\0') {
-//            ch = source.next();
-//        }
-//        String token_value = source.substring(start, source.getOffset());
-//        if(ch != '\"') {
-//            return new Token(token_value, STRING, line, false);
-//        } else {
-//            return new Token(token_value, STRING, line, true);
-//        }
-//    }
+    private Token stringLiteral() {
+        char ch;
+        ch = source.next();
+        while(ch != '\"' && ch != '\n' && ch != '\0') {
+            ch = source.next();
+        }
+        String token_value = source.substring(start, source.getOffset());
+        if(ch != '\"') {
+            errorCollector.add(new CompilerError("expected \" at line " + line));
+        }
+        return new Token(STRING_CONSTANT, token_value, token_value, line);
+    }
 
     private Token makeToken(TokenType type) {
         String lexeme = source.substring(start, source.getOffset());

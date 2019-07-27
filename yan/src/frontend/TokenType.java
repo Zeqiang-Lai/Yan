@@ -26,13 +26,15 @@ public enum TokenType {
 
     // Literals.
     IDENTIFIER, STRING_CONSTANT, INTEGER_CONSTANT, FLOAT_CONSTANT,
+    BOOL_CONSTANT,
+
 
     // Keywords.
     IF, ELSE, WHILE, RETURN, PRINT, BREAK, CONTINUE, FUNC, VAR,
 
 
     // Types
-    INT, FLOAT, CHAR, STRING,
+    INT, FLOAT, CHAR, STRING, BOOL,
 
     EOF,
     UNKNOWN;

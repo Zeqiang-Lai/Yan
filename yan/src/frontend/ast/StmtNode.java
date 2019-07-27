@@ -1,46 +1,47 @@
 package frontend.ast;
 
+import error.RuntimeError;
 import frontend.Token;
 
 import java.util.List;
 import java.util.Vector;
 
 public abstract class StmtNode {
-    interface Visitor<R> {
+    public interface Visitor<R> {
         R visitBlockStmt(Block stmt);
         R visitEmptyStmt(Empty stmt);
-        R visitExpressionStmt(Expression stmt);
+        R visitExpressionStmt(Expression stmt) throws RuntimeError;
         R visitFunctionStmt(Function stmt);
         R visitIfStmt(If stmt);
-        R visitPrintStmt(Print stmt);
+        R visitPrintStmt(Print stmt) throws RuntimeError;
         R visitReturnStmt(Return stmt);
-        R visitVarStmt(Var stmt);
+        R visitVarStmt(Var stmt) throws RuntimeError;
         R visitWhileStmt(While stmt);
         R visitBreakStmt(Break stmt);
         R visitContinueStmt(Continue stmt);
     }
 
-    abstract <R> R accept(Visitor<R> visitor);
+    public abstract <R> R accept(Visitor<R> visitor) throws RuntimeError;
 
     static public class Print extends StmtNode {
-        ExprNode value;
+        public ExprNode value;
 
         public Print(ExprNode value) {
             this.value = value;
         }
 
         @Override
-        <R> R accept(Visitor<R> visitor) {
+        public <R> R accept(Visitor<R> visitor) throws RuntimeError {
             return visitor.visitPrintStmt(this);
         }
     }
 
     static public class Function extends StmtNode {
-        final Token name;
-        final List<Token> params;
-        final List<Token> types;
-        final Token return_type;
-        final Block body;
+        public final Token name;
+        public final List<Token> params;
+        public final List<Token> types;
+        public final Token return_type;
+        public final Block body;
 
         public Function(Token name, List<Token> params, List<Token> types, Token return_type, Block body) {
             this.name = name;
@@ -51,15 +52,15 @@ public abstract class StmtNode {
         }
 
         @Override
-        <R> R accept(Visitor<R> visitor) {
+        public <R> R accept(Visitor<R> visitor) {
             return visitor.visitFunctionStmt(this);
         }
     }
 
     static public class Var extends StmtNode {
-        final Token name;
-        final ExprNode initializer;
-        final Token type;
+        public final Token name;
+        public final ExprNode initializer;
+        public final Token type;
 
         public Var(Token name, ExprNode initializer, Token type) {
             this.name = name;
@@ -68,13 +69,13 @@ public abstract class StmtNode {
         }
 
         @Override
-        <R> R accept(Visitor<R> visitor) {
+        public <R> R accept(Visitor<R> visitor) throws RuntimeError {
             return visitor.visitVarStmt(this);
         }
     }
 
     public static class Block extends StmtNode {
-        final List<StmtNode> items;
+        public final List<StmtNode> items;
 
         public Block(List<StmtNode> items) {
             this.items = items;
@@ -86,9 +87,9 @@ public abstract class StmtNode {
     }
 
     public static class If extends StmtNode {
-        ExprNode cond;
-        StmtNode if_body;
-        StmtNode else_body;
+        public ExprNode cond;
+        public StmtNode if_body;
+        public StmtNode else_body;
 
         public If(ExprNode cond, StmtNode if_body, StmtNode else_body) {
             this.cond = cond;
@@ -102,8 +103,8 @@ public abstract class StmtNode {
     }
 
     public static class While extends StmtNode {
-        ExprNode cond;
-        StmtNode body;
+        public ExprNode cond;
+        public StmtNode body;
 
         public While(ExprNode cond, StmtNode body) {
             this.cond = cond;
@@ -124,7 +125,7 @@ public abstract class StmtNode {
     }
 
     public static class Return extends StmtNode {
-        ExprNode value;
+        public ExprNode value;
 
         public Return(ExprNode value) {
             this.value = value;
@@ -148,13 +149,13 @@ public abstract class StmtNode {
     }
 
     public static class Expression extends StmtNode {
-        ExprNode expr;
+        public ExprNode expr;
 
         public Expression(ExprNode expr) {
             this.expr = expr;
         }
 
-        public <R> R accept(StmtNode.Visitor<R> visitor) {
+        public <R> R accept(StmtNode.Visitor<R> visitor) throws RuntimeError {
             return visitor.visitExpressionStmt(this);
         }
     }
