@@ -189,13 +189,46 @@ public class Lexer {
         char ch;
         ch = source.next();
         while(ch != '\"' && ch != '\n' && ch != '\0') {
+            if(ch == '\\')
+                ch = source.next();
             ch = source.next();
         }
         String token_value = source.substring(start, source.getOffset());
+        StringBuilder literal = new StringBuilder();
+        for(int i=1; i<token_value.length()-1; i++) {
+            char c = token_value.charAt(i);
+            if(c == '\\') {
+                if(i+1 == token_value.length()-1) {
+                    errorCollector.add(new CompilerError("invalid string literal at line" + line));
+                    break;
+                }
+                switch(token_value.charAt(i+1)) {
+                    case 'n':
+                        literal.append('\n');
+                        break;
+                    case 't':
+                        literal.append('\t');
+                        break;
+                    case '\\':
+                        literal.append('\\');
+                        break;
+                    case '"':
+                        literal.append('"');
+                        break;
+                    default:
+                        errorCollector.add(new CompilerError("invalid string literal at line" + line));
+                        break;
+                }
+                i++;
+            }
+            else {
+                literal.append(c);
+            }
+        }
         if(ch != '\"') {
             errorCollector.add(new CompilerError("expected \" at line " + line));
         }
-        return new Token(STRING_CONSTANT, token_value, token_value, line);
+        return new Token(STRING_CONSTANT, token_value, literal.toString(), line);
     }
 
     private Token makeToken(TokenType type) {
