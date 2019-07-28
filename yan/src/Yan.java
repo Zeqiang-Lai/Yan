@@ -72,13 +72,28 @@ public class Yan {
         }
     }
 
+    private String readConsole(BufferedReader reader) throws IOException {
+        // TODO: if else ?
+        StringBuilder input = new StringBuilder();
+        String line = reader.readLine();
+        input.append(line);
+        if (line.startsWith("while") || line.startsWith("if") || line.startsWith("{")) {
+            do {
+                System.out.print("...");
+                line = reader.readLine();
+                input.append(line);
+            } while (!line.endsWith("}"));
+        }
+        return input.toString();
+    }
+
     private void runInterpreter() throws IOException {
         final Interpreter interpreter = new Interpreter();
         InputStreamReader input = new InputStreamReader(System.in);
         BufferedReader reader = new BufferedReader(input);
-        while(true) {
+        while (true) {
             System.out.print(">> ");
-            run(interpreter, reader.readLine(), "Yan");
+            run(interpreter, readConsole(reader), "Yan");
         }
     }
 
