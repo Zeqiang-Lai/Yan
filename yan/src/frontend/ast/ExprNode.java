@@ -9,16 +9,25 @@ public abstract class ExprNode {
 
     public interface Visitor<R> {
         R visitAssignExpr(Assign expr);
-        R visitBinaryExpr(Binary expr) throws RuntimeError;
+
+        R visitBinaryExpr(Binary expr);
+
         R visitCallExpr(FunCall expr);
-        R visitGroupingExpr(Grouping expr) throws RuntimeError;
+
+        R visitGroupingExpr(Grouping expr);
+
         R visitLiteralExpr(Literal expr);
-        R visitLogicalExpr(Logical expr) throws RuntimeError;
-        R visitRelationExpr(Relation expr) throws RuntimeError;
-        R visitUnaryExpr(Unary expr) throws RuntimeError;
-        R visitVariableExpr(Variable expr) throws RuntimeError;
+
+        R visitLogicalExpr(Logical expr);
+
+        R visitRelationExpr(Relation expr);
+
+        R visitUnaryExpr(Unary expr);
+
+        R visitVariableExpr(Variable expr);
     }
-    public abstract <R> R accept(Visitor<R> visitor) throws RuntimeError;
+
+    public abstract <R> R accept(Visitor<R> visitor);
 
     public static class Assign extends ExprNode {
         public Assign(Token name, Token type, ExprNode value) {
@@ -43,7 +52,7 @@ public abstract class ExprNode {
             this.right = right;
         }
 
-        public <R> R accept(Visitor<R> visitor) throws RuntimeError {
+        public <R> R accept(Visitor<R> visitor) {
             return visitor.visitBinaryExpr(this);
         }
 
@@ -59,7 +68,7 @@ public abstract class ExprNode {
             this.right = right;
         }
 
-        public <R> R accept(Visitor<R> visitor) throws RuntimeError {
+        public <R> R accept(Visitor<R> visitor) {
             return visitor.visitRelationExpr(this);
         }
 
@@ -89,7 +98,7 @@ public abstract class ExprNode {
             this.expression = expression;
         }
 
-        public <R> R accept(Visitor<R> visitor) throws RuntimeError {
+        public <R> R accept(Visitor<R> visitor) {
             return visitor.visitGroupingExpr(this);
         }
 
@@ -115,7 +124,7 @@ public abstract class ExprNode {
             this.right = right;
         }
 
-        public  <R> R accept(Visitor<R> visitor) throws RuntimeError {
+        public <R> R accept(Visitor<R> visitor) {
             return visitor.visitLogicalExpr(this);
         }
 
@@ -130,7 +139,7 @@ public abstract class ExprNode {
             this.right = right;
         }
 
-        public <R> R accept(Visitor<R> visitor) throws RuntimeError {
+        public <R> R accept(Visitor<R> visitor) {
             return visitor.visitUnaryExpr(this);
         }
 
@@ -143,7 +152,7 @@ public abstract class ExprNode {
             this.name = name;
         }
 
-        public <R> R accept(Visitor<R> visitor) throws RuntimeError {
+        public <R> R accept(Visitor<R> visitor) {
             return visitor.visitVariableExpr(this);
         }
 

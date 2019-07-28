@@ -103,7 +103,7 @@ public class Parser {
     private StmtNode parseStatement() throws ParseError {
         if (match(WHILE)) return parseWhile();
         if (match(IF)) return parseIf();
-        if (match(LEFT_BRACE)) return parseBlock();
+        if (check(LEFT_BRACE)) return parseBlock();
         if (match(CONTINUE)) return parseContinue();
         if (match(BREAK)) return parseBreak();
         if (match(RETURN)) return parseReturn();
@@ -162,7 +162,7 @@ public class Parser {
 
         StmtNode.Block if_body = parseBlock();
         StmtNode.Block else_body = null;
-        if (check(ELSE)) {
+        if (match(ELSE)) {
             else_body = parseBlock();
         }
         return new StmtNode.If(condition, if_body, else_body);

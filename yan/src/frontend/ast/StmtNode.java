@@ -9,19 +9,29 @@ import java.util.Vector;
 public abstract class StmtNode {
     public interface Visitor<R> {
         R visitBlockStmt(Block stmt);
+
         R visitEmptyStmt(Empty stmt);
-        R visitExpressionStmt(Expression stmt) throws RuntimeError;
+
+        R visitExpressionStmt(Expression stmt);
+
         R visitFunctionStmt(Function stmt);
+
         R visitIfStmt(If stmt);
-        R visitPrintStmt(Print stmt) throws RuntimeError;
+
+        R visitPrintStmt(Print stmt);
+
         R visitReturnStmt(Return stmt);
-        R visitVarStmt(Var stmt) throws RuntimeError;
+
+        R visitVarStmt(Var stmt);
+
         R visitWhileStmt(While stmt);
+
         R visitBreakStmt(Break stmt);
+
         R visitContinueStmt(Continue stmt);
     }
 
-    public abstract <R> R accept(Visitor<R> visitor) throws RuntimeError;
+    public abstract <R> R accept(Visitor<R> visitor);
 
     static public class Print extends StmtNode {
         public ExprNode value;
@@ -31,7 +41,7 @@ public abstract class StmtNode {
         }
 
         @Override
-        public <R> R accept(Visitor<R> visitor) throws RuntimeError {
+        public <R> R accept(Visitor<R> visitor) {
             return visitor.visitPrintStmt(this);
         }
     }
@@ -69,7 +79,7 @@ public abstract class StmtNode {
         }
 
         @Override
-        public <R> R accept(Visitor<R> visitor) throws RuntimeError {
+        public <R> R accept(Visitor<R> visitor) {
             return visitor.visitVarStmt(this);
         }
     }
@@ -117,7 +127,8 @@ public abstract class StmtNode {
     }
 
     public static class Empty extends StmtNode {
-        public Empty() {}
+        public Empty() {
+        }
 
         public <R> R accept(StmtNode.Visitor<R> visitor) {
             return visitor.visitEmptyStmt(this);
@@ -155,7 +166,7 @@ public abstract class StmtNode {
             this.expr = expr;
         }
 
-        public <R> R accept(StmtNode.Visitor<R> visitor) throws RuntimeError {
+        public <R> R accept(StmtNode.Visitor<R> visitor) {
             return visitor.visitExpressionStmt(this);
         }
     }
