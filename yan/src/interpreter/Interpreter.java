@@ -7,16 +7,27 @@ import frontend.TokenType;
 import frontend.ast.ExprNode;
 import frontend.ast.StmtNode;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static frontend.TokenType.*;
 
-public class Interpreter implements ExprNode.Visitor<Object>, StmtNode.Visitor<Object> {
+public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visitor<YanObject> {
     private Environment environment = new Environment();
     private ErrorCollector errorCollector = ErrorCollector.getInstance();
 
     private boolean breakloop = false;
     private boolean exitBlock = false;
+
+    private final static Map<TokenType, YanObject> defalutValue = new HashMap<>();
+
+    static {
+        defalutValue.put(INT, new YanObject(0, DataType.INT));
+        defalutValue.put(FLOAT, new YanObject(0, DataType.FLOAT));
+        defalutValue.put(STRING, new YanObject(0, DataType.STRING));
+        defalutValue.put(BOOL, new YanObject(0, DataType.BOOL));
+    }
 
     // region: Interface
 
@@ -34,7 +45,7 @@ public class Interpreter implements ExprNode.Visitor<Object>, StmtNode.Visitor<O
 
     // region: Utils
 
-    private Object evaluate(ExprNode expr) {
+    private YanObject evaluate(ExprNode expr) {
         return expr.accept(this);
     }
 
@@ -71,150 +82,194 @@ public class Interpreter implements ExprNode.Visitor<Object>, StmtNode.Visitor<O
         return value.toString();
     }
 
+    private boolean checkType(DataType target, DataType... types) {
+        for(DataType type : types) {
+            if(target == type)
+                return true;
+        }
+        throw new RuntimeError(null,
+                "operand of negative sign should be a number.");
+    }
+
     // endregion
 
     // region: Expression
 
     @Override
-    public Object visitAssignExpr(ExprNode.Assign expr) {
-        Object value = evaluate(expr.value);
+    public YanObject visitAssignExpr(ExprNode.Assign expr) {
+        YanObject value = evaluate(expr.value);
         environment.assign(expr.name, value);
         return value;
     }
 
     @Override
-    public Object visitBinaryExpr(ExprNode.Binary expr) {
-        Object left = evaluate(expr.left);
-        Object right = evaluate(expr.right);
+    public YanObject visitBinaryExpr(ExprNode.Binary expr) {
+        YanObject left = evaluate(expr.left);
+        YanObject right = evaluate(expr.right);
         TokenType op = expr.operator.type;
+
+        // should be number type.
+        checkType(left.type, DataType.INT, DataType.FLOAT);
+        checkType(right.type, DataType.INT, DataType.FLOAT);
+
+        double left_value = (Double) left.value;
+        double right_value = (Double) right.value;
+        double result = 0;
+        DataType result_type;
+        if(left.type == DataType.FLOAT || right.type == DataType.FLOAT)
+            result_type = DataType.FLOAT;
+        else
+            result_type = DataType.INT;
 
         switch (op) {
             case ADD:
-                return (Double) left + (Double) right;
+                result = left_value + right_value; break;
             case SUB:
-                return (Double) left - (Double) right;
+                result = left_value - right_value; break;
             case MULTI:
-                return (Double) left * (Double) right;
+                result = left_value * right_value; break;
             case DIV:
-                return (Double) left / (Double) right;
+                result = left_value / right_value; break;
+            default:
+                // unreachable.
         }
+        if(result_type == DataType.INT)
+            return new YanObject((int)result, DataType.INT);
+        else
+            return new YanObject(result, DataType.FLOAT);
+    }
 
+    @Override
+    public YanObject visitCallExpr(ExprNode.FunCall expr) {
         return null;
     }
 
     @Override
-    public Object visitCallExpr(ExprNode.FunCall expr) {
-        return null;
-    }
-
-    @Override
-    public Object visitGroupingExpr(ExprNode.Grouping expr) {
+    public YanObject visitGroupingExpr(ExprNode.Grouping expr) {
         return evaluate(expr.expression);
     }
 
     @Override
-    public Object visitLiteralExpr(ExprNode.Literal expr) {
-        Object value = null;
+    public YanObject visitLiteralExpr(ExprNode.Literal expr) {
+        YanObject value = null;
         if (expr.value instanceof Integer) {
-            Integer tmp = (Integer) expr.value;
-            value = Double.valueOf((double) tmp);
+            value = new YanObject(expr.value, DataType.INT);
+        } else if(expr.value instanceof Boolean) {
+            value = new YanObject(expr.value, DataType.BOOL);
+        } else if(expr.value instanceof Double) {
+            value = new YanObject(expr.value, DataType.FLOAT);
+        } else if(expr.value instanceof String) {
+            value = new YanObject(expr.value, DataType.STRING);
         } else {
-            value = expr.value;
+            // should be unreachable.
+            throw new RuntimeError(null, "invalid literal type.");
         }
         return value;
     }
 
     @Override
-    public Object visitLogicalExpr(ExprNode.Logical expr) {
-        Object left = evaluate(expr.left);
-        Object right = evaluate(expr.right);
+    public YanObject visitLogicalExpr(ExprNode.Logical expr) {
+        YanObject left = evaluate(expr.left);
+        YanObject right = evaluate(expr.right);
         TokenType op = expr.operator.type;
 
+        if(left.type != DataType.BOOL || right.type != DataType.BOOL)
+            throw new RuntimeError(expr.operator,
+                    "operands of relation operator should be able to be evaluated as bool");
+        boolean result;
         switch (op) {
             case REL_AND:
-                return (Boolean) left && (Boolean) right;
+                result = (Boolean)left.value && (Boolean)right.value;
+                return new YanObject(result, DataType.BOOL);
             case REL_OR:
-                return (Boolean) left || (Boolean) right;
+                result = (Boolean)left.value || (Boolean)right.value;
+                return new YanObject(result, DataType.BOOL);
         }
         return null;
     }
 
     @Override
-    public Object visitRelationExpr(ExprNode.Relation expr) {
-        Object left = evaluate(expr.left);
-        Object right = evaluate(expr.right);
+    public YanObject visitRelationExpr(ExprNode.Relation expr) {
+        YanObject left = evaluate(expr.left);
+        YanObject right = evaluate(expr.right);
         TokenType op = expr.operator.type;
+
+        // should be number type.
+        checkType(left.type, DataType.INT, DataType.FLOAT);
+        checkType(right.type, DataType.INT, DataType.FLOAT);
+
+        double left_value = (Double) left.value;
+        double right_value = (Double) right.value;
 
         switch (op) {
             case GREATER:
-                return (Double) left > (Double) right;
+                return new YanObject(left_value > right_value, DataType.BOOL);
             case GREATER_EQUAL:
-                return (Double) left >= (Double) right;
+                return new YanObject(left_value >= right_value, DataType.BOOL);
             case LESS:
-                return (Double) left < (Double) right;
+                return new YanObject(left_value < right_value, DataType.BOOL);
             case LESS_EQUAL:
-                return (Double) left <= (Double) right;
+                return new YanObject(left_value <= right_value, DataType.BOOL);
             case EQUAL:
-                return left.equals(right);
+                return new YanObject(left.equals(right), DataType.BOOL);
             case NOT_EQUAL:
-                return !left.equals(right);
+                return new YanObject(!left.equals(right), DataType.BOOL);
         }
+
         return null;
     }
 
     @Override
-    public Object visitUnaryExpr(ExprNode.Unary expr) {
-        Object right = evaluate(expr.right);
+    public YanObject visitUnaryExpr(ExprNode.Unary expr) {
+        YanObject right = evaluate(expr.right);
+        Object value = null;
         switch (expr.operator.type) {
             case SUB:
-                if (right instanceof Double)
-                    right = -(Double) right;
-                else if (right instanceof Integer)
-                    right = -(Integer) right;
-                else
-                    throw new RuntimeError(expr.operator,
-                            "operand of negative sign should be a number.");
+                if(checkType(right.type, DataType.INT))
+                    value = -(int)right.value;
+                if(checkType(right.type, DataType.FLOAT))
+                    value = -(double)right.value;
                 break;
             case REL_NOT:
-                right = !(Boolean) right;
+                value = !(Boolean) right.value;
                 break;
             default:
                 // unreachable
                 break;
         }
-        return right;
+        return new YanObject(value, right.type);
     }
 
     @Override
-    public Object visitVariableExpr(ExprNode.Variable expr) {
+    public YanObject visitVariableExpr(ExprNode.Variable expr) {
         return environment.get(expr.name);
     }
     // endregion
 
     // region: Statement
     @Override
-    public String visitBlockStmt(StmtNode.Block stmt) {
+    public YanObject visitBlockStmt(StmtNode.Block stmt) {
         executeBlock(stmt.items, new Environment(environment));
         return null;
     }
 
     @Override
-    public String visitEmptyStmt(StmtNode.Empty stmt) {
+    public YanObject visitEmptyStmt(StmtNode.Empty stmt) {
         return null;
     }
 
     @Override
-    public Object visitExpressionStmt(StmtNode.Expression stmt) {
+    public YanObject visitExpressionStmt(StmtNode.Expression stmt) {
         return evaluate(stmt.expr);
     }
 
     @Override
-    public String visitFunctionStmt(StmtNode.Function stmt) {
+    public YanObject visitFunctionStmt(StmtNode.Function stmt) {
         return null;
     }
 
     @Override
-    public String visitIfStmt(StmtNode.If stmt) {
+    public YanObject visitIfStmt(StmtNode.If stmt) {
         if (isTruthy(evaluate(stmt.cond))) {
             execute(stmt.if_body);
         } else if (stmt.else_body != null) {
@@ -224,42 +279,31 @@ public class Interpreter implements ExprNode.Visitor<Object>, StmtNode.Visitor<O
     }
 
     @Override
-    public String visitPrintStmt(StmtNode.Print stmt) {
+    public YanObject visitPrintStmt(StmtNode.Print stmt) {
         Object value = evaluate(stmt.value);
         System.out.println(stringify(value));
         return null;
     }
 
     @Override
-    public String visitReturnStmt(StmtNode.Return stmt) {
+    public YanObject visitReturnStmt(StmtNode.Return stmt) {
         return null;
     }
 
     @Override
-    public String visitVarStmt(StmtNode.Var stmt) {
-        Object value = null;
+    public YanObject visitVarStmt(StmtNode.Var stmt) {
+        YanObject value = null;
         if (stmt.initializer != null) {
             value = evaluate(stmt.initializer);
         } else {
-            switch (stmt.type.type) {
-                case INT:
-                case FLOAT:
-                    value = 0;
-                    break;
-                case STRING:
-                    value = "";
-                    break;
-                case BOOL:
-                    value = true;
-                    break;
-            }
+            value = defalutValue.get(stmt.type.type);
         }
         environment.define(stmt.name.lexeme, value);
         return null;
     }
 
     @Override
-    public String visitWhileStmt(StmtNode.While stmt) {
+    public YanObject visitWhileStmt(StmtNode.While stmt) {
         while (isTruthy(evaluate(stmt.cond))) {
             execute(stmt.body);
             exitBlock = false;
@@ -271,14 +315,14 @@ public class Interpreter implements ExprNode.Visitor<Object>, StmtNode.Visitor<O
     }
 
     @Override
-    public String visitBreakStmt(StmtNode.Break stmt) {
+    public YanObject visitBreakStmt(StmtNode.Break stmt) {
         exitBlock = true;
         breakloop = true;
         return null;
     }
 
     @Override
-    public String visitContinueStmt(StmtNode.Continue stmt) {
+    public YanObject visitContinueStmt(StmtNode.Continue stmt) {
         exitBlock = true;
         return null;
     }

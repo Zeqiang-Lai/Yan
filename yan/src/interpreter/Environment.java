@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class Environment {
     final Environment enclosing;
-    private final Map<String, Object> values = new HashMap<>();
+    private final Map<String, YanObject> values = new HashMap<>();
 
     Environment() {
         enclosing = null;
@@ -18,11 +18,11 @@ public class Environment {
         this.enclosing = enclosing;
     }
 
-    void define(String name, Object value) {
+    void define(String name, YanObject value) {
         values.put(name, value);
     }
 
-    Object get(Token name) throws RuntimeError {
+    YanObject get(Token name) throws RuntimeError {
         if (values.containsKey(name.lexeme)) {
             return values.get(name.lexeme);
         }
@@ -33,7 +33,7 @@ public class Environment {
                 "Undefined variable '" + name.lexeme + "'.");
     }
 
-    void assign(Token name, Object value) throws RuntimeError {
+    void assign(Token name, YanObject value) throws RuntimeError {
         if (values.containsKey(name.lexeme)) {
             values.put(name.lexeme, value);
             return;
