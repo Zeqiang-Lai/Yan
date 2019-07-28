@@ -2,7 +2,6 @@ package interpreter;
 
 import error.ErrorCollector;
 import error.RuntimeError;
-import frontend.Token;
 import frontend.TokenType;
 import frontend.ast.ExprNode;
 import frontend.ast.StmtNode;
