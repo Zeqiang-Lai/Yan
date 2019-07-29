@@ -19,30 +19,30 @@ declaration -> funcDecl
 						 | varDecl
 						 | statement
 funcDecl -> "func" IDENTIFIER "(" parameters ")" ["->" type] block
-varDecl -> "var" IDENTIFIER ":" type ["=" expression]
-type -> "float" | "int" | "string"
+varDecl -> "var" IDENTIFIER ":" type ["=" expression] ";"
+type -> "float" | "int" | "string" | "bool"
 parameters -> IDENTIFIER: type
 ```
 
 ### Statements 
 
 ```
-statement -> ifStmt
+statement -> block
+					 | ifStmt
 					 | whileStmt
 					 | forStmt
 					 | exprStmt
 					 | returnStmt
 					 | continueStmt
 					 | breakStmt
-					 | block
 					 | printStmt
 ifStmt -> "if" "(" expression ")" "{" block "}" ["else" block ]
 whileStmt -> "while" "(" expression ")"  block
 ## forStmt -> for(varDecl|exprStmt expression; expression) block
-exprStmt -> expression 
-returnStmt -> "return" 
-continueStmt -> "continue" 
-breakStmt -> "break"
+exprStmt -> expression ";"
+returnStmt -> "return" ";"
+continueStmt -> "continue" ";"
+breakStmt -> "break" ";"
 block -> "{" statement* "}"
 printStmt -> "print" "(" expression ")" 
 ```
