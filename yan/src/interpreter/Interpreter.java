@@ -1,7 +1,7 @@
 package interpreter;
 
 import error.ErrorCollector;
-import error.RuntimeError;
+import interpreter.error.RuntimeError;
 import frontend.TokenType;
 import frontend.ast.ExprNode;
 import frontend.ast.StmtNode;
@@ -13,7 +13,8 @@ import java.util.Map;
 import static frontend.TokenType.*;
 
 public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visitor<YanObject> {
-    private Environment environment = new Environment();
+    final Environment globals = new Environment();
+    private Environment environment = globals;
     private ErrorCollector errorCollector = ErrorCollector.getInstance();
 
     private boolean breakloop = false;
@@ -21,12 +22,17 @@ public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visito
 
     private final static Map<TokenType, YanObject> defalutValue = new HashMap<>();
 
+
     static {
         defalutValue.put(INT, new YanObject(0, DataType.INT));
         defalutValue.put(FLOAT, new YanObject(0, DataType.FLOAT));
         defalutValue.put(STRING, new YanObject(0, DataType.STRING));
         defalutValue.put(BOOL, new YanObject(0, DataType.BOOL));
     }
+
+    Interpreter() {
+    }
+
 
     // region: Interface
 
@@ -264,6 +270,7 @@ public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visito
 
     @Override
     public YanObject visitFunctionStmt(StmtNode.Function stmt) {
+        environment.define(stmt.name.lexeme, new YanFunction(stmt));
         return null;
     }
 

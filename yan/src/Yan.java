@@ -77,7 +77,8 @@ public class Yan {
         StringBuilder input = new StringBuilder();
         String line = reader.readLine();
         input.append(line);
-        if (line.startsWith("while") || line.startsWith("if") || line.startsWith("{")) {
+        if (line.startsWith("func") || line.startsWith("while") ||
+                line.startsWith("if") || line.startsWith("{")) {
             do {
                 System.out.print("...");
                 line = reader.readLine();

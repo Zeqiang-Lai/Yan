@@ -1,6 +1,5 @@
 package frontend.ast;
 
-import error.RuntimeError;
 import frontend.Token;
 
 import java.util.List;

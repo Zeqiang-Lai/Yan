@@ -1,6 +1,6 @@
 package interpreter;
 
-import error.RuntimeError;
+import interpreter.error.RuntimeError;
 import frontend.Token;
 
 import java.util.HashMap;

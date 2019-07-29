@@ -1,10 +1,8 @@
 package frontend.ast;
 
-import error.RuntimeError;
 import frontend.Token;
 
 import java.util.List;
-import java.util.Vector;
 
 public abstract class StmtNode {
     public interface Visitor<R> {
