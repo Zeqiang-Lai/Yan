@@ -322,6 +322,7 @@ public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visito
 
     @Override
     public YanObject visitBreakStmt(StmtNode.Break stmt) {
+        // FIXME: handle nested loop
         exitBlock = true;
         breakloop = true;
         return null;
@@ -329,6 +330,7 @@ public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visito
 
     @Override
     public YanObject visitContinueStmt(StmtNode.Continue stmt) {
+        // FIXME: handle nested loop
         exitBlock = true;
         return null;
     }

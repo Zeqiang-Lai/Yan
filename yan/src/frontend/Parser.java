@@ -282,16 +282,19 @@ public class Parser {
 
         // Function Call
         if (match(LEFT_PAREN)) {
+            if(!(node instanceof ExprNode.Variable))
+                throw new ParseError(current, "expect function identifier", tokens, BEFORE);
+
             List<ExprNode> args = new Vector<>();
             if (match(RIGHT_PAREN)) {
-                return new ExprNode.FunCall(node, null, args);
+                return new ExprNode.FunCall(null, ((ExprNode.Variable)node).name, args);
             }
             do {
                 ExprNode arg = parseAssignment();
                 args.add(arg);
             } while (match(COMMA));
             consume(RIGHT_PAREN);
-            return new ExprNode.FunCall(node, null, args);
+            return new ExprNode.FunCall(null, ((ExprNode.Variable)node).name, args);
         }
 
         // Future: array sub
