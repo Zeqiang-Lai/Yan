@@ -1,6 +1,7 @@
 package interpreter;
 
 import frontend.ast.StmtNode;
+import interpreter.error.RuntimeError;
 
 import java.util.List;
 
@@ -15,12 +16,30 @@ public class YanFunction extends YanObject implements YanCallable{
     @Override
     public YanObject call(Interpreter interpreter, List<YanObject> arguments) {
         Environment environment = new Environment(interpreter.globals);
-        // check arguments signature
-        for(int i=0; i<arguments.size(); i++) {
-                
+        for(int i=0; i<arguments.size(); ++i) {
+            if(!(checkType(arguments.get(i).type, i)))
+                throw new RuntimeError(null, "type not matched, expected " +
+                        function.types.get(i).lexeme + ", but got" + arguments.get(i).type);
+            environment.define(function.params.get(i).lexeme, arguments.get(i));
         }
-
+        try {
+            interpreter.executeBlock(function.body.items, environment);
+        }catch (RuntimeException e) {
+            if(e instanceof Return)
+                return ((Return) e).value;
+            throw e;
+        }
         return null;
+    }
+
+    @Override
+    public int arity() {
+        return function.params.size();
+    }
+
+    @Override
+    public boolean checkType(DataType type, int idx) {
+        return type == DataType.tokenType2DataType.get(function.types.get(idx).type);
     }
 
     @Override

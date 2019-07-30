@@ -7,6 +7,7 @@ import frontend.ast.ExprNode;
 import frontend.ast.StmtNode;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -30,7 +31,7 @@ public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visito
         defalutValue.put(BOOL, new YanObject(0, DataType.BOOL));
     }
 
-    Interpreter() {
+    public Interpreter() {
     }
 
 
@@ -58,7 +59,7 @@ public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visito
         stmt.accept(this);
     }
 
-    private void executeBlock(List<StmtNode> statements, Environment environment) {
+    public void executeBlock(List<StmtNode> statements, Environment environment) {
         Environment previous = this.environment;
         try {
             this.environment = environment;
@@ -117,9 +118,9 @@ public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visito
         checkType(left.type, DataType.INT, DataType.FLOAT);
         checkType(right.type, DataType.INT, DataType.FLOAT);
 
-        double left_value = (Double) left.value;
-        double right_value = (Double) right.value;
-        double result = 0;
+        Double left_value = Double.valueOf(String.valueOf(left.value));
+        Double right_value = Double.valueOf(String.valueOf(right.value));
+        Double result = new Double(0);
         DataType result_type;
         if(left.type == DataType.FLOAT || right.type == DataType.FLOAT)
             result_type = DataType.FLOAT;
@@ -139,14 +140,31 @@ public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visito
                 // unreachable.
         }
         if(result_type == DataType.INT)
-            return new YanObject((int)result, DataType.INT);
+            return new YanObject(Integer.valueOf(result.intValue()), DataType.INT);
         else
             return new YanObject(result, DataType.FLOAT);
     }
 
     @Override
     public YanObject visitCallExpr(ExprNode.FunCall expr) {
-        return null;
+        // check if the function is defined.
+        YanObject func = environment.get(expr.paren);
+        if(func instanceof YanCallable) {
+            // validate args number
+            if(((YanCallable) func).arity() != expr.arguments.size())
+                throw new RuntimeError(null,
+                        "the number of provided arguments and expected number of arguments are not matched");
+            // evaluate args
+            List<YanObject> args = new LinkedList<>();
+            for(int i=0; i<expr.arguments.size(); ++i) {
+                YanObject value = evaluate(expr.arguments.get(i));
+                args.add(value);
+            }
+            // call
+            return ((YanCallable) func).call(this, args);
+        } else {
+            throw new RuntimeError(null, "invalid function call.");
+        }
     }
 
     @Override
@@ -293,7 +311,8 @@ public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visito
 
     @Override
     public YanObject visitReturnStmt(StmtNode.Return stmt) {
-        return null;
+        YanObject value = evaluate(stmt.value);
+        throw new Return(value);
     }
 
     @Override
