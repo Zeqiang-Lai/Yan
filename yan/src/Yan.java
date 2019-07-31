@@ -80,10 +80,21 @@ public class Yan {
         if (line.startsWith("func") || line.startsWith("while") ||
                 line.startsWith("if") || line.startsWith("{")) {
             do {
-                System.out.print("...");
+                System.out.print("... ");
                 line = reader.readLine();
                 input.append(line);
-            } while (!line.endsWith("}"));
+                // FIXME: {}
+                if(line.endsWith("}")) {
+                    System.out.print("... ");
+                    String line1 = reader.readLine();
+                    System.out.print("... ");
+                    String line2 = reader.readLine();
+                    if(line1.equals("") && line2.equals(""))
+                        break;
+                    else
+                        input.append(line1).append(line2);
+                }
+            } while (true);
         }
         return input.toString();
     }
@@ -93,7 +104,7 @@ public class Yan {
         InputStreamReader input = new InputStreamReader(System.in);
         BufferedReader reader = new BufferedReader(input);
         while (true) {
-            System.out.print(">> ");
+            System.out.print(">>> ");
             run(interpreter, readConsole(reader), "Yan");
         }
     }
