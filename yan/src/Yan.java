@@ -2,6 +2,7 @@ import error.ErrorCollector;
 import frontend.*;
 import frontend.ast.StmtNode;
 import interpreter.Interpreter;
+import interpreter.error.RuntimeError;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -72,27 +73,46 @@ public class Yan {
         }
     }
 
+    private int countBrace(String line, int count) {
+        for(int i=0; i<line.length(); ++i) {
+            if(line.charAt(i) == '{')
+                count += 1;
+            else if(line.charAt(i) == '}')
+            {
+                if(count > 0) count --;
+                else
+                    throw new RuntimeError(null, "unmatched '{' .");
+            }
+        }
+        return count;
+    }
+
     private String readConsole(BufferedReader reader) throws IOException {
         // TODO: if else ?
+        int count = 0;
         StringBuilder input = new StringBuilder();
         String line = reader.readLine();
+        count = countBrace(line, count);
+
         input.append(line);
+
         if (line.startsWith("func") || line.startsWith("while") ||
                 line.startsWith("if") || line.startsWith("{")) {
             do {
                 System.out.print("... ");
                 line = reader.readLine();
                 input.append(line);
-                // FIXME: {}
-                if(line.endsWith("}")) {
+                count = countBrace(line, count);
+
+                if(count == 0) {
                     System.out.print("... ");
                     String line1 = reader.readLine();
-                    System.out.print("... ");
-                    String line2 = reader.readLine();
-                    if(line1.equals("") && line2.equals(""))
+                    count = countBrace(line1, count);
+
+                    if(line1.equals(""))
                         break;
                     else
-                        input.append(line1).append(line2);
+                        input.append(line1);
                 }
             } while (true);
         }

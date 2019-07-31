@@ -67,18 +67,18 @@ public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visito
                 execute(statement);
                 if(exitBlock) break;
             }
-        } finally {
+        } catch (RuntimeException e){
+            throw e;
+        } finally{
             this.environment = previous;
         }
     }
 
-    private boolean isTruthy(Object value) {
-        if (value instanceof Boolean) return (boolean) value;
-        if (value instanceof Integer) {
-            Integer tmp = (Integer) value;
-            if (tmp == 0)
-                return false;
-            return true;
+    private boolean isTruthy(YanObject o) {
+        if (o.type == DataType.BOOL) return (boolean) o.value;
+        if (o.type == DataType.INT) {
+            Integer tmp = (Integer) o.value;
+            return tmp != 0;
         }
         throw new RuntimeError(null,
                 "expression in the condition should be able to evaluate as boolean.");
@@ -221,8 +221,8 @@ public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visito
         checkType(left.type, DataType.INT, DataType.FLOAT);
         checkType(right.type, DataType.INT, DataType.FLOAT);
 
-        double left_value = (Double) left.value;
-        double right_value = (Double) right.value;
+        Double left_value = Double.valueOf(String.valueOf(left.value));
+        Double right_value = Double.valueOf(String.valueOf(right.value));
 
         switch (op) {
             case GREATER:
@@ -234,9 +234,10 @@ public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visito
             case LESS_EQUAL:
                 return new YanObject(left_value <= right_value, DataType.BOOL);
             case EQUAL:
-                return new YanObject(left.equals(right), DataType.BOOL);
+                // TODO: compare string
+                return new YanObject(left_value.equals(right_value), DataType.BOOL);
             case NOT_EQUAL:
-                return new YanObject(!left.equals(right), DataType.BOOL);
+                return new YanObject(!left_value.equals(right_value), DataType.BOOL);
         }
 
         return null;
