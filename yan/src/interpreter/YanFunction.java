@@ -1,5 +1,6 @@
 package interpreter;
 
+import frontend.DataType;
 import frontend.ast.StmtNode;
 import interpreter.error.RuntimeError;
 

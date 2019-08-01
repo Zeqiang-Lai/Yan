@@ -1,5 +1,4 @@
-package interpreter;
-import frontend.TokenType;
+package frontend;
 
 import java.util.HashMap;
 import java.util.Map;

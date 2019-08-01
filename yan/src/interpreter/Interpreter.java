@@ -1,6 +1,7 @@
 package interpreter;
 
 import error.ErrorCollector;
+import frontend.DataType;
 import interpreter.error.RuntimeError;
 import frontend.TokenType;
 import frontend.ast.ExprNode;
@@ -32,6 +33,7 @@ public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visito
     }
 
     public Interpreter() {
+
     }
 
 

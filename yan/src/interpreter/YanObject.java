@@ -1,5 +1,7 @@
 package interpreter;
 
+import frontend.DataType;
+
 public class YanObject extends Object{
     Object value;
     DataType type;

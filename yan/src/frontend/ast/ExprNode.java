@@ -1,5 +1,6 @@
 package frontend.ast;
 
+import frontend.DataType;
 import frontend.Token;
 
 import java.util.List;
@@ -28,10 +29,12 @@ public abstract class ExprNode {
 
     public abstract <R> R accept(Visitor<R> visitor);
 
+    public DataType type;
+
     public static class Assign extends ExprNode {
-        public Assign(Token name, Token type, ExprNode value) {
+        public Assign(Token name, Token operator, ExprNode value) {
             this.name = name;
-            this.type = type;
+            this.operator = operator;
             this.value = value;
         }
 
@@ -40,7 +43,7 @@ public abstract class ExprNode {
         }
 
         public final Token name;
-        public final Token type;
+        public final Token operator;
         public final ExprNode value;
     }
 
@@ -156,5 +159,6 @@ public abstract class ExprNode {
         }
 
         public final Token name;
+        public int scope_idx;
     }
 }

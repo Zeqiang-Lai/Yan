@@ -1,5 +1,7 @@
 package interpreter;
 
+import frontend.DataType;
+
 import java.util.List;
 
 public interface YanCallable {
