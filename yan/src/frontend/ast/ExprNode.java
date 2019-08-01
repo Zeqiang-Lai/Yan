@@ -5,7 +5,7 @@ import frontend.Token;
 
 import java.util.List;
 
-public abstract class ExprNode {
+public abstract class ExprNode extends Node{
 
     public interface Visitor<R> {
         R visitAssignExpr(Assign expr);

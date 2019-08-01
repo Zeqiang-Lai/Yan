@@ -4,7 +4,7 @@ import frontend.Token;
 
 import java.util.List;
 
-public abstract class StmtNode {
+public abstract class StmtNode extends Node{
     public interface Visitor<R> {
         R visitBlockStmt(Block stmt);
 
