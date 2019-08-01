@@ -1,9 +1,14 @@
 package compiler;
 
+import compiler.error.NameError;
+import compiler.error.TypeError;
+import error.CompilerError;
 import frontend.DataType;
 import frontend.Token;
 import frontend.ast.ExprNode;
 import frontend.ast.StmtNode;
+
+import javax.xml.crypto.Data;
 
 
 /**
@@ -27,11 +32,11 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
         stmt.accept(this);
     }
 
-    private DataType checkType(ExprNode left, ExprNode right) {
+    private DataType checkType(ExprNode left, ExprNode right, String err_msg) {
         DataType left_type = evaluate(left);
         DataType right_type = evaluate(right);
         if(!DataType.computeCompatible(left_type, right_type))
-            throw new TypeError();
+            throw new TypeError(err_msg);
         return DataType.implicitConversion(left_type, right_type);
     }
 
@@ -49,19 +54,37 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
 
     @Override
     public DataType visitBinaryExpr(ExprNode.Binary expr) {
-        DataType type = checkType(expr.left, expr.right);
+        DataType type = checkType(expr.left, expr.right,
+                "operand of binary expression should be number.");
         expr.type = type;
-        return type;
+        return expr.type;
     }
 
     @Override
     public DataType visitCallExpr(ExprNode.FunCall expr) {
-        DataType type;
-        for(ExprNode node : expr.arguments) {
-            type = evaluate(node);
+        String func_name = expr.paren.lexeme;
 
+        Symbol symbol = scope.current.get(func_name);
+        StmtNode.Function func;
+        if(symbol == null)
+            throw new NameError(func_name, false);
+        if(symbol.type != DataType.FUNCTION)
+            throw new TypeError("'" + symbol.type + "'object is not callable");
+        func = (StmtNode.Function)symbol.value;
+
+        if(expr.arguments.size() != func.params.size())
+            throw new TypeError(func_name + "() takes " + func.params.size() +
+                    " positional argument but " + expr.arguments.size() + " were given");
+
+        DataType arg_type, param_type;
+        for(int i=0; i<expr.arguments.size(); i++) {
+            arg_type = evaluate(expr.arguments.get(i));
+            param_type = DataType.tokenType2DataType.get(func.types.get(i).type);
+            if(arg_type != param_type)
+                throw new TypeError("expected " + param_type + " for " +
+                        i + "th parameter of " + func_name + "(), but " + arg_type + " were given");
         }
-//        return ;
+        return DataType.tokenType2DataType.get(func.return_type.type);
     }
 
     @Override
@@ -83,24 +106,31 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
         DataType left_type = evaluate(expr.left);
         DataType right_type = evaluate(expr.right);
         if(left_type != DataType.BOOL || right_type != DataType.BOOL)
-            throw new TypeError();
+            throw new TypeError("operand of logical expression should be boolean.");
         expr.type = left_type;
         return expr.type;
     }
 
     @Override
     public DataType visitRelationExpr(ExprNode.Relation expr) {
-        return null;
+        checkType(expr.left, expr.right,
+                "operand of relational expression should be number.");
+        expr.type = DataType.BOOL;
+        return expr.type;
     }
 
     @Override
     public DataType visitUnaryExpr(ExprNode.Unary expr) {
-        return null;
+        expr.type = evaluate(expr.right);
+        return expr.type;
     }
 
     @Override
     public DataType visitVariableExpr(ExprNode.Variable expr) {
-        return null;
+        Symbol symbol = scope.current.get(expr.name.lexeme);
+        if(symbol == null)
+            throw new NameError(expr.name.lexeme, false);
+        return symbol.type;
     }
 
     // endregion
@@ -111,7 +141,7 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
     public DataType visitBlockStmt(StmtNode.Block stmt) {
         if(scope_type == null) scope.beginScope(Scope.Type.BLOCK);
         for(StmtNode node : stmt.items)
-            node.accept(this);
+            execute(node);
         if(scope_type == null) scope.endScope();
         return null;
     }
@@ -129,7 +159,7 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
 
         scope.beginScope(Scope.Type.FUNCTION);
         scope_type = Scope.Type.FUNCTION;
-        stmt.body.accept(this);
+        execute(stmt.body);
         scope_type = null;
         scope.endScope();
 
@@ -144,14 +174,14 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
 
         scope.beginScope(Scope.Type.IF);
         scope_type = Scope.Type.IF;
-        stmt.if_body.accept(this);
+        execute(stmt.if_body);
         scope_type = null;
         scope.endScope();
 
         if(stmt.else_body != null) {
             scope.beginScope(Scope.Type.IF);
             scope_type = Scope.Type.IF;
-            stmt.else_body.accept(this);
+            execute(stmt.else_body);
             scope_type = null;
             scope.endScope();
         }
@@ -173,6 +203,16 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
 
     @Override
     public DataType visitVarStmt(StmtNode.Var stmt) {
+        if(scope.current.get(stmt.name.lexeme) != null)
+            throw new NameError(stmt.name.lexeme, true);
+
+        DataType type = DataType.tokenType2DataType.get(stmt.type.type);
+        DataType init_type = evaluate(stmt.initializer);
+
+        if(!DataType.assignCompatible(type, init_type))
+            throw new TypeError(init_type + " can not be assigned to " + type);
+
+        scope.current.put(stmt.name.lexeme, new Symbol(type, stmt));
         return null;
     }
 
@@ -183,7 +223,7 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
 
         scope.beginScope(Scope.Type.LOOP);
         scope_type = Scope.Type.LOOP;
-        stmt.body.accept(this);
+        execute(stmt.body);
         scope_type = null;
         scope.endScope();
 

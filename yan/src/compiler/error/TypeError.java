@@ -1,4 +1,4 @@
-package compiler;
+package compiler.error;
 
 import error.CompilerError;
 
