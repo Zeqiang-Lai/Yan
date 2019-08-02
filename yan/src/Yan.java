@@ -25,13 +25,15 @@ public class Yan {
                 if (args[i].equals("-o")) {
                     out = args[i + 1];
                     i++;
+                } else if(args[i].equals("--help")) {
+                   printUsage();
                 } else {
                     if (source == null)
                         source = args[i];
                     i++;
                 }
             }
-//            runner.run(source, out);
+            runner.runCompiler(source, out);
         }
     }
 
@@ -125,7 +127,7 @@ public class Yan {
         BufferedReader reader = new BufferedReader(input);
         while (true) {
             System.out.print(">>> ");
-            run(interpreter, readConsole(reader), "Yan");
+            run(interpreter, readConsole(reader), "<stdin>");
         }
     }
 
