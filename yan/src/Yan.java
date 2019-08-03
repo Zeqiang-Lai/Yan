@@ -1,3 +1,4 @@
+import compiler.Resolver;
 import error.ErrorCollector;
 import frontend.*;
 import frontend.ast.StmtNode;
@@ -25,13 +26,15 @@ public class Yan {
                 if (args[i].equals("-o")) {
                     out = args[i + 1];
                     i++;
+                } else if(args[i].equals("--help")) {
+                    printUsage();
                 } else {
                     if (source == null)
                         source = args[i];
                     i++;
                 }
             }
-//            runner.run(source, out);
+            runner.runCompiler(source, out);
         }
     }
 
@@ -71,6 +74,12 @@ public class Yan {
         if (errorCollector.hasError()) {
             errorCollector.show();
         }
+
+        Resolver resolver = new Resolver();
+        for(StmtNode stmt : statements) {
+            resolver.execute(stmt);
+        }
+
     }
 
     private int countBrace(String line, int count) {

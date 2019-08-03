@@ -25,10 +25,10 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
     }
 
     private DataType evaluate(Token name) {
-        return null;
+        return scope.get(name.lexeme).type;
     }
 
-    private void execute(StmtNode stmt) {
+    public void execute(StmtNode stmt) {
         stmt.accept(this);
     }
 
@@ -64,7 +64,7 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
     public DataType visitCallExpr(ExprNode.FunCall expr) {
         String func_name = expr.paren.lexeme;
 
-        Symbol symbol = scope.current.get(func_name);
+        Symbol symbol = scope.get(func_name);
         StmtNode.Function func;
         if(symbol == null)
             throw new NameError(func_name, false);
@@ -127,7 +127,7 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
 
     @Override
     public DataType visitVariableExpr(ExprNode.Variable expr) {
-        Symbol symbol = scope.current.get(expr.name.lexeme);
+        Symbol symbol = scope.get(expr.name.lexeme);
         if(symbol == null)
             throw new NameError(expr.name.lexeme, false);
         return symbol.type;
@@ -142,7 +142,8 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
         if(scope_type == null) scope.beginScope(Scope.Type.BLOCK);
         for(StmtNode node : stmt.items)
             execute(node);
-        if(scope_type == null) scope.endScope();
+        // FIXME: bad implementation, it is better to put endscope, beginscope in the same function.
+//        if(scope_type == null) scope.endScope();
         return null;
     }
 
@@ -159,9 +160,18 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
 
         scope.beginScope(Scope.Type.FUNCTION);
         scope_type = Scope.Type.FUNCTION;
+
+        // Add arguments to current scope.
+        // FIXME: bad implementation
+        for(int i=0; i<stmt.params.size(); i++) {
+            DataType type = DataType.tokenType2DataType.get(stmt.types.get(i).type);
+            scope.current.put(stmt.params.get(i).lexeme, new Symbol(type, null));
+        }
+        // Execute body
         execute(stmt.body);
+
         scope_type = null;
-        scope.endScope();
+//        scope.endScope();
 
         return null;
     }
@@ -176,14 +186,14 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
         scope_type = Scope.Type.IF;
         execute(stmt.if_body);
         scope_type = null;
-        scope.endScope();
+//        scope.endScope();
 
         if(stmt.else_body != null) {
             scope.beginScope(Scope.Type.IF);
             scope_type = Scope.Type.IF;
             execute(stmt.else_body);
             scope_type = null;
-            scope.endScope();
+//            scope.endScope();
         }
         return null;
     }
@@ -203,13 +213,22 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
 
     @Override
     public DataType visitVarStmt(StmtNode.Var stmt) {
-        if(scope.current.get(stmt.name.lexeme) != null)
+        if(scope.get(stmt.name.lexeme) != null)
             throw new NameError(stmt.name.lexeme, true);
 
-        DataType type = DataType.tokenType2DataType.get(stmt.type.type);
-        DataType init_type = evaluate(stmt.initializer);
+        // Feature: type inference by initializer
+        DataType type;
+        DataType init_type = null;
+        if(stmt.initializer != null) init_type = evaluate(stmt.initializer);
+        if(stmt.type == null) type = init_type;
+        else type = DataType.tokenType2DataType.get(stmt.type.type);
 
-        if(!DataType.assignCompatible(type, init_type))
+        // a little tricky here, if there is no initializer, then we must explicit declare type.
+        // so type should not be null.
+        if(type == null)
+            throw new TypeError("can not inference type of " + stmt.name.lexeme);
+
+        if(init_type != null && !DataType.assignCompatible(type, init_type))
             throw new TypeError(init_type + " can not be assigned to " + type);
 
         scope.current.put(stmt.name.lexeme, new Symbol(type, stmt));
@@ -218,14 +237,13 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
 
     @Override
     public DataType visitWhileStmt(StmtNode.While stmt) {
-        this.scope_type = Scope.Type.LOOP;
         stmt.cond.type = evaluate(stmt.cond);
 
         scope.beginScope(Scope.Type.LOOP);
         scope_type = Scope.Type.LOOP;
         execute(stmt.body);
         scope_type = null;
-        scope.endScope();
+//        scope.endScope();
 
         return null;
     }

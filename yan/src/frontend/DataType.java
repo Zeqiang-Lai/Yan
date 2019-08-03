@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum DataType {
-    INT, FLOAT, STRING, BOOL,
+    INT, FLOAT, STRING, BOOL, CHAR,
     FUNCTION;
 
     static public Map<TokenType, DataType> tokenType2DataType = new HashMap<>();
@@ -14,6 +14,7 @@ public enum DataType {
         tokenType2DataType.put(TokenType.FLOAT, FLOAT);
         tokenType2DataType.put(TokenType.STRING, STRING);
         tokenType2DataType.put(TokenType.BOOL, BOOL);
+        tokenType2DataType.put(TokenType.CHAR, CHAR);
     }
 
     static public boolean computeCompatible(DataType left, DataType right) {

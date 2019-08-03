@@ -122,7 +122,7 @@ public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visito
 
         Double left_value = Double.valueOf(String.valueOf(left.value));
         Double right_value = Double.valueOf(String.valueOf(right.value));
-        Double result = new Double(0);
+        Double result = (double) 0;
         DataType result_type;
         if(left.type == DataType.FLOAT || right.type == DataType.FLOAT)
             result_type = DataType.FLOAT;

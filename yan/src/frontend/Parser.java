@@ -68,7 +68,7 @@ public class Parser {
         Token type = null;
         ExprNode initializer = null;
 
-        if (match(COLON)) type = consume(FLOAT, INT, CHAR, STRING);
+        if (match(COLON)) type = consume(FLOAT, INT, CHAR, STRING, BOOL);
         if (match(ASSIGN)) initializer = parseExpression();
 
         consume(SEMICOLON);
@@ -86,7 +86,7 @@ public class Parser {
             do {
                 Token param = consume(IDENTIFIER);
                 consume(COLON);
-                Token type = consume(FLOAT, INT, CHAR, STRING);
+                Token type = consume(FLOAT, INT, CHAR, STRING, BOOL);
                 params.add(param);
                 types.add(type);
             } while (match(COMMA));
@@ -94,7 +94,7 @@ public class Parser {
         }
 
         Token return_type = null;
-        if (match(ARROW)) return_type = consume(FLOAT, INT, CHAR, STRING);
+        if (match(ARROW)) return_type = consume(FLOAT, INT, CHAR, STRING, BOOL);
 
         StmtNode.Block body = parseBlock();
         return new StmtNode.Function(name, params, types, return_type, body);
