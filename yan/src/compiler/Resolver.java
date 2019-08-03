@@ -3,6 +3,7 @@ package compiler;
 import compiler.error.NameError;
 import compiler.error.TypeError;
 import error.CompilerError;
+import error.ErrorCollector;
 import frontend.DataType;
 import frontend.Token;
 import frontend.ast.ExprNode;
@@ -16,6 +17,7 @@ import javax.xml.crypto.Data;
  * 2. Resolve every reference of variable.
  */
 public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<DataType> {
+    private ErrorCollector errorCollector = ErrorCollector.getInstance();
 
     Scope scope = new Scope();
     Scope.Type scope_type = null;
@@ -29,7 +31,11 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
     }
 
     public void execute(StmtNode stmt) {
-        stmt.accept(this);
+        try {
+            stmt.accept(this);
+        }catch (CompilerError error) {
+            errorCollector.add(error);
+        }
     }
 
     private DataType checkType(ExprNode left, ExprNode right, String err_msg) {
@@ -47,7 +53,7 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
         DataType left_type = evaluate(expr.name);
         DataType right_type = evaluate(expr.value);
         if(!DataType.assignCompatible(left_type, right_type))
-            throw new TypeError( right_type + "could not be assigned to a " + left_type);
+            throw new TypeError( right_type + " could not be assigned to a " + left_type);
         expr.type = right_type;
         return right_type;
     }
@@ -140,8 +146,9 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
     @Override
     public DataType visitBlockStmt(StmtNode.Block stmt) {
         if(scope_type == null) scope.beginScope(Scope.Type.BLOCK);
-        for(StmtNode node : stmt.items)
+        for(StmtNode node : stmt.items) {
             execute(node);
+        }
         // FIXME: bad implementation, it is better to put endscope, beginscope in the same function.
 //        if(scope_type == null) scope.endScope();
         return null;
@@ -162,7 +169,7 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
         scope_type = Scope.Type.FUNCTION;
 
         // Add arguments to current scope.
-        // FIXME: bad implementation
+        // FIXME: bad implementation?
         for(int i=0; i<stmt.params.size(); i++) {
             DataType type = DataType.tokenType2DataType.get(stmt.types.get(i).type);
             scope.current.put(stmt.params.get(i).lexeme, new Symbol(type, null));

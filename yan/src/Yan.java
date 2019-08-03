@@ -80,6 +80,9 @@ public class Yan {
             resolver.execute(stmt);
         }
 
+        if (errorCollector.hasError()) {
+            errorCollector.show();
+        }
     }
 
     private int countBrace(String line, int count) {
