@@ -1,9 +1,9 @@
 package interpreter.error;
 
-import error.CompilerError;
+import error.BaseError;
 import frontend.Token;
 
-public class RuntimeError extends CompilerError {
+public class RuntimeError extends BaseError {
     public RuntimeError(Token token, String message) {
         super(message);
     }

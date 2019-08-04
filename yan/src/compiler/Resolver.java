@@ -1,16 +1,13 @@
 package compiler;
 
-import compiler.error.NameError;
 import compiler.error.SyntaxError;
 import compiler.error.TypeError;
-import error.CompilerError;
+import error.BaseError;
 import error.ErrorCollector;
 import frontend.DataType;
 import frontend.Token;
 import frontend.ast.ExprNode;
 import frontend.ast.StmtNode;
-
-import javax.xml.crypto.Data;
 
 
 /**
@@ -35,7 +32,7 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
     public void execute(StmtNode stmt) {
         try {
             stmt.accept(this);
-        }catch (CompilerError error) {
+        }catch (BaseError error) {
             errorCollector.add(error);
         }
     }

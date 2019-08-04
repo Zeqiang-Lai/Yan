@@ -4,7 +4,7 @@ import frontend.Token;
 
 import java.util.List;
 
-public class ParseError extends CompilerError {
+public class ParseError extends BaseError {
     public enum ErrorType {
         AT, AFTER, BEFORE
     }
