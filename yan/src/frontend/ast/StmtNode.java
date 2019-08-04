@@ -146,12 +146,24 @@ public abstract class StmtNode extends Node{
     }
 
     public static class Break extends StmtNode {
+        private StmtNode code;
+
+        public void setCode(StmtNode code) {
+            this.code = code;
+        }
+
         public <R> R accept(StmtNode.Visitor<R> visitor) {
             return visitor.visitBreakStmt(this);
         }
     }
 
     public static class Continue extends StmtNode {
+        private StmtNode code;
+
+        public void setCode(StmtNode code) {
+            this.code = code;
+        }
+
         public <R> R accept(StmtNode.Visitor<R> visitor) {
             return visitor.visitContinueStmt(this);
         }
