@@ -287,14 +287,14 @@ public class Parser {
 
             List<ExprNode> args = new Vector<>();
             if (match(RIGHT_PAREN)) {
-                return new ExprNode.FunCall(null, ((ExprNode.Variable)node).name, args);
+                return new ExprNode.FunCall((ExprNode.Variable) node, ((ExprNode.Variable)node).name, args);
             }
             do {
                 ExprNode arg = parseAssignment();
                 args.add(arg);
             } while (match(COMMA));
             consume(RIGHT_PAREN);
-            return new ExprNode.FunCall(null, ((ExprNode.Variable)node).name, args);
+            return new ExprNode.FunCall((ExprNode.Variable) node, ((ExprNode.Variable)node).name, args);
         }
 
         // Future: array sub

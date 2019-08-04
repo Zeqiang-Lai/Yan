@@ -80,9 +80,10 @@ public abstract class ExprNode extends Node{
     }
 
     public static class FunCall extends ExprNode {
-        public FunCall(ExprNode callee, Token paren, List<ExprNode> arguments) {
-            this.callee = callee;
-            this.paren = paren;
+
+        public FunCall(Variable identifier, Token name, List<ExprNode> arguments) {
+            this.identifier = identifier;
+            this.name = name;
             this.arguments = arguments;
         }
 
@@ -90,8 +91,8 @@ public abstract class ExprNode extends Node{
             return visitor.visitCallExpr(this);
         }
 
-        public final ExprNode callee;
-        public final Token paren;
+        public final ExprNode.Variable identifier;
+        public final Token name;
         public final List<ExprNode> arguments;
     }
 
@@ -159,6 +160,6 @@ public abstract class ExprNode extends Node{
         }
 
         public final Token name;
-        public int scope_idx;
+        public StmtNode declaration;
     }
 }

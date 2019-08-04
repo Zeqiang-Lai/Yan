@@ -18,8 +18,9 @@ import frontend.ast.StmtNode;
 public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<DataType> {
     private ErrorCollector errorCollector = ErrorCollector.getInstance();
 
-    NestedScope scopes = new NestedScope();
-    Scope.Type scope_type = null;
+    private NestedScope scopes = new NestedScope();
+    // used to distinguish scope of individual block and blocks in if and while
+    private Scope.Type scope_type = null;
 
     private DataType evaluate(ExprNode expr) {
         return expr.accept(this);
@@ -67,13 +68,13 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
 
     @Override
     public DataType visitCallExpr(ExprNode.FunCall expr) {
-        String func_name = expr.paren.lexeme;
+        String func_name = expr.name.lexeme;
 
+        DataType type = evaluate(expr.identifier);
+        if(type != DataType.FUNCTION)
+            throw new TypeError("'" + type + "'object is not callable");
         Symbol symbol = scopes.get(func_name);
-        StmtNode.Function func;
-        if(symbol.type != DataType.FUNCTION)
-            throw new TypeError("'" + symbol.type + "'object is not callable");
-        func = (StmtNode.Function)symbol.value;
+        StmtNode.Function func = (StmtNode.Function)symbol.value;
 
         if(expr.arguments.size() != func.params.size())
             throw new TypeError(func_name + "() takes " + func.params.size() +
@@ -131,6 +132,7 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
     @Override
     public DataType visitVariableExpr(ExprNode.Variable expr) {
         Symbol symbol = scopes.get(expr.name.lexeme);
+        expr.declaration = (StmtNode) symbol.value;
         return symbol.type;
     }
 
@@ -216,7 +218,7 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
 
     @Override
     public DataType visitVarStmt(StmtNode.Var stmt) {
-        // TODO: check if var has already defined.
+        // TODO: it is better to check if var has already defined before resolving declaration.
         // Feature: type inference by initializer
         DataType type;
         DataType init_type = null;
