@@ -41,7 +41,7 @@ public class Parser {
 
     private void recovery() {
         while (!isAtEnd()) {
-            if (previous().type == SEMICOLON) return;
+//            if (previous().type == SEMICOLON) return;
             switch (peek().type) {
                 case FUNC:
                 case VAR:
