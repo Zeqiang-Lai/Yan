@@ -150,7 +150,7 @@ public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visito
     @Override
     public YanObject visitCallExpr(ExprNode.FunCall expr) {
         // check if the function is defined.
-        YanObject func = environment.get(expr.paren);
+        YanObject func = environment.get(expr.name);
         if(func instanceof YanCallable) {
             // validate args number
             if(((YanCallable) func).arity() != expr.arguments.size())
