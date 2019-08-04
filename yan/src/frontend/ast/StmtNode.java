@@ -134,6 +134,7 @@ public abstract class StmtNode extends Node{
     }
 
     public static class Return extends StmtNode {
+        public StmtNode func;
         public ExprNode value;
 
         public Return(ExprNode value) {
@@ -146,10 +147,10 @@ public abstract class StmtNode extends Node{
     }
 
     public static class Break extends StmtNode {
-        private StmtNode code;
+        private StmtNode loop;
 
-        public void setCode(StmtNode code) {
-            this.code = code;
+        public void setLoop(StmtNode loop) {
+            this.loop = loop;
         }
 
         public <R> R accept(StmtNode.Visitor<R> visitor) {
@@ -158,10 +159,10 @@ public abstract class StmtNode extends Node{
     }
 
     public static class Continue extends StmtNode {
-        private StmtNode code;
+        private StmtNode loop;
 
-        public void setCode(StmtNode code) {
-            this.code = code;
+        public void setLoop(StmtNode loop) {
+            this.loop = loop;
         }
 
         public <R> R accept(StmtNode.Visitor<R> visitor) {

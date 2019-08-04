@@ -14,6 +14,7 @@ import frontend.ast.StmtNode;
  * 1. Resolve type of every expression.
  * 2. Resolve every reference of variable.
  * 3. Resolve break, continue
+ * 4. Resolve return
  */
 public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<DataType> {
     private ErrorCollector errorCollector = ErrorCollector.getInstance();
@@ -213,6 +214,18 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
     public DataType visitReturnStmt(StmtNode.Return stmt) {
         if(stmt.value != null)
             stmt.value.type = evaluate(stmt.value);
+
+        // type of return value should match the return type in function definition.
+        Scope scope = scopes.find(Scope.Type.FUNCTION);
+        if(scope == null)
+            throw new SyntaxError("'return' outside function");
+
+        StmtNode.Function func = (StmtNode.Function) scope.code;
+        if(func.return_type.type.toDataType() != stmt.value.type)
+            throw new TypeError("return type of function '"+func.name.lexeme +
+                    "' is " + func.return_type.lexeme + ", but " + stmt.value.type + " were given.");
+
+        stmt.func = scope.code;
         return null;
     }
 
@@ -256,7 +269,7 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
         Scope scope = scopes.find(Scope.Type.LOOP);
         if(scope == null)
             throw new SyntaxError("'break' outside loop");
-        stmt.setCode(scope.code);
+        stmt.setLoop(scope.code);
         return null;
     }
 
@@ -265,7 +278,7 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
         Scope scope = scopes.find(Scope.Type.LOOP);
         if(scope == null)
             throw new SyntaxError("'continue' not properly in loop");
-        stmt.setCode(scope.code);
+        stmt.setLoop(scope.code);
         return null;
     }
 

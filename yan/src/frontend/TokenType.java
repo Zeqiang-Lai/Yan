@@ -51,4 +51,8 @@ public enum TokenType {
         tokenValue.put(SEMICOLON, ";");
         tokenValue.put(ASSIGN, "=");
     }
+
+    public DataType toDataType() {
+        return DataType.tokenType2DataType.get(this);
+    }
 }

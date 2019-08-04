@@ -73,6 +73,7 @@ public class Yan {
 
         if (errorCollector.hasError()) {
             errorCollector.show();
+            return;
         }
 
         Resolver resolver = new Resolver();
