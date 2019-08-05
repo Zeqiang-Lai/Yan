@@ -1,11 +1,5 @@
 # Language Specification for Yan
 
-- 不使用分号作为语句的分隔符，换行符为自然分割。
-
-**注释**
-
-- 两种
-
 ## Syntax Grammar
 
 ```

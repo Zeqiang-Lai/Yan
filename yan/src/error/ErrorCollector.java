@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Vector;
 
 public class ErrorCollector {
-    private List<CompilerError> errors = new Vector<>();
+    private List<BaseError> errors = new Vector<>();
 
     private String file_name;
 
@@ -26,13 +26,13 @@ public class ErrorCollector {
         return !errors.isEmpty();
     }
 
-    public void add(CompilerError e) {
+    public void add(BaseError e) {
         errors.add(e);
     }
 
     public void show() {
         String bold_color = "\033[1m";
-        for(CompilerError error : errors) {
+        for(BaseError error : errors) {
             String msg = bold_color + file_name + ":" +
                     error.description;
             System.out.println(msg);

@@ -1,43 +1,37 @@
 package compiler;
 
+import compiler.error.NameError;
+import frontend.ast.StmtNode;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 
 public class Scope {
     enum Type {
-        IF, LOOP, FUNCTION, BLOCK, GLOBAL;
+        IF, ELSE, LOOP, FUNCTION, BLOCK, GLOBAL;
     }
 
-    private Stack<Map<String, Symbol>> scopes = new Stack<>();
-    private Stack<Type> types = new Stack<>();
-    private final Map<String, Symbol> global = new HashMap<>();
-    public Map<String, Symbol> current;
+    public Map<String, Symbol> symbols = new HashMap<>();
 
+    public final StmtNode code;
 
-    public Scope() {
-        scopes.push(global);
-        this.current = this.global;
-        this.types.push(Type.GLOBAL);
+    public final Type type;
+
+    public Scope(StmtNode code, Type type) {
+        this.code = code;
+        this.type = type;
     }
 
-    public void beginScope(Type type) {
-        this.types.push(type);
-        scopes.push(new HashMap<>());
-        current = scopes.peek();
+    public Symbol get(String identifier) {
+        if(!symbols.containsKey(identifier))
+            return null;
+        return symbols.get(identifier);
     }
 
-    public void endScope() {
-        scopes.pop();
-        current = scopes.peek();
-        this.types.pop();
-    }
-
-    public Type type() {
-        return types.peek();
-    }
-
-    public Map<String, Symbol> getScope(int idx) {
-        return scopes.get(idx);
+    public void put(String identifier, Symbol symbol) {
+        if(symbols.containsKey(identifier))
+            throw new NameError(identifier, true);
+        symbols.put(identifier, symbol);
     }
 }

@@ -41,7 +41,7 @@ public class Parser {
 
     private void recovery() {
         while (!isAtEnd()) {
-            if (previous().type == SEMICOLON) return;
+//            if (previous().type == SEMICOLON) return;
             switch (peek().type) {
                 case FUNC:
                 case VAR:
@@ -68,7 +68,7 @@ public class Parser {
         Token type = null;
         ExprNode initializer = null;
 
-        if (match(COLON)) type = consume(FLOAT, INT, CHAR, STRING);
+        if (match(COLON)) type = consume(FLOAT, INT, CHAR, STRING, BOOL);
         if (match(ASSIGN)) initializer = parseExpression();
 
         consume(SEMICOLON);
@@ -86,7 +86,7 @@ public class Parser {
             do {
                 Token param = consume(IDENTIFIER);
                 consume(COLON);
-                Token type = consume(FLOAT, INT, CHAR, STRING);
+                Token type = consume(FLOAT, INT, CHAR, STRING, BOOL);
                 params.add(param);
                 types.add(type);
             } while (match(COMMA));
@@ -94,7 +94,7 @@ public class Parser {
         }
 
         Token return_type = null;
-        if (match(ARROW)) return_type = consume(FLOAT, INT, CHAR, STRING);
+        if (match(ARROW)) return_type = consume(FLOAT, INT, CHAR, STRING, BOOL);
 
         StmtNode.Block body = parseBlock();
         return new StmtNode.Function(name, params, types, return_type, body);
@@ -287,14 +287,14 @@ public class Parser {
 
             List<ExprNode> args = new Vector<>();
             if (match(RIGHT_PAREN)) {
-                return new ExprNode.FunCall(null, ((ExprNode.Variable)node).name, args);
+                return new ExprNode.FunCall((ExprNode.Variable) node, ((ExprNode.Variable)node).name, args);
             }
             do {
                 ExprNode arg = parseAssignment();
                 args.add(arg);
             } while (match(COMMA));
             consume(RIGHT_PAREN);
-            return new ExprNode.FunCall(null, ((ExprNode.Variable)node).name, args);
+            return new ExprNode.FunCall((ExprNode.Variable) node, ((ExprNode.Variable)node).name, args);
         }
 
         // Future: array sub

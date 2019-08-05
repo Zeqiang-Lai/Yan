@@ -1,3 +1,4 @@
+import compiler.Resolver;
 import error.ErrorCollector;
 import frontend.*;
 import frontend.ast.StmtNode;
@@ -26,7 +27,7 @@ public class Yan {
                     out = args[i + 1];
                     i++;
                 } else if(args[i].equals("--help")) {
-                   printUsage();
+                    printUsage();
                 } else {
                     if (source == null)
                         source = args[i];
@@ -69,6 +70,16 @@ public class Yan {
 
         Parser parser = new Parser(tokens);
         List<StmtNode> statements = parser.parse();
+
+        if (errorCollector.hasError()) {
+            errorCollector.show();
+            return;
+        }
+
+        Resolver resolver = new Resolver();
+        for(StmtNode stmt : statements) {
+            resolver.execute(stmt);
+        }
 
         if (errorCollector.hasError()) {
             errorCollector.show();

@@ -1,5 +1,5 @@
 package frontend;
-import error.CompilerError;
+import error.BaseError;
 import error.ErrorCollector;
 
 import java.util.HashMap;
@@ -87,7 +87,7 @@ public class Lexer {
             case ':': return makeToken(COLON);
         }
 
-        errorCollector.add(new CompilerError("unexpected character."));
+        errorCollector.add(new BaseError("unexpected character."));
         return makeToken(UNKNOWN);
     }
 
@@ -199,7 +199,7 @@ public class Lexer {
             char c = token_value.charAt(i);
             if(c == '\\') {
                 if(i+1 == token_value.length()-1) {
-                    errorCollector.add(new CompilerError("invalid string literal at line" + line));
+                    errorCollector.add(new BaseError("invalid string literal at line" + line));
                     break;
                 }
                 switch(token_value.charAt(i+1)) {
@@ -216,7 +216,7 @@ public class Lexer {
                         literal.append('"');
                         break;
                     default:
-                        errorCollector.add(new CompilerError("invalid string literal at line" + line));
+                        errorCollector.add(new BaseError("invalid string literal at line" + line));
                         break;
                 }
                 i++;
@@ -226,7 +226,7 @@ public class Lexer {
             }
         }
         if(ch != '\"') {
-            errorCollector.add(new CompilerError("expected \" at line " + line));
+            errorCollector.add(new BaseError("expected \" at line " + line));
         }
         return new Token(STRING_CONSTANT, token_value, literal.toString(), line);
     }

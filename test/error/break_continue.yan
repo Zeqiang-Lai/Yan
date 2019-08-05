@@ -1,0 +1,9 @@
+func a() {
+    while(true) {
+        break;
+    }
+    break;
+    if(true) {
+        continue;
+    }
+}

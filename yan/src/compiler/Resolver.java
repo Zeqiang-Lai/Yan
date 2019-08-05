@@ -1,5 +1,9 @@
 package compiler;
 
+import compiler.error.SyntaxError;
+import compiler.error.TypeError;
+import error.BaseError;
+import error.ErrorCollector;
 import frontend.DataType;
 import frontend.Token;
 import frontend.ast.ExprNode;
@@ -9,29 +13,37 @@ import frontend.ast.StmtNode;
 /**
  * 1. Resolve type of every expression.
  * 2. Resolve every reference of variable.
+ * 3. Resolve break, continue
+ * 4. Resolve return
  */
 public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<DataType> {
+    private ErrorCollector errorCollector = ErrorCollector.getInstance();
 
-    Scope scope = new Scope();
-    Scope.Type scope_type = null;
+    private NestedScope scopes = new NestedScope();
+    // used to distinguish scope of individual block and blocks in if and while
+    private Scope.Type scope_type = null;
 
     private DataType evaluate(ExprNode expr) {
         return expr.accept(this);
     }
 
     private DataType evaluate(Token name) {
-        return null;
+        return scopes.get(name.lexeme).type;
     }
 
-    private void execute(StmtNode stmt) {
-        stmt.accept(this);
+    public void execute(StmtNode stmt) {
+        try {
+            stmt.accept(this);
+        }catch (BaseError error) {
+            errorCollector.add(error);
+        }
     }
 
-    private DataType checkType(ExprNode left, ExprNode right) {
+    private DataType checkType(ExprNode left, ExprNode right, String err_msg) {
         DataType left_type = evaluate(left);
         DataType right_type = evaluate(right);
         if(!DataType.computeCompatible(left_type, right_type))
-            throw new TypeError();
+            throw new TypeError(err_msg);
         return DataType.implicitConversion(left_type, right_type);
     }
 
@@ -42,26 +54,42 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
         DataType left_type = evaluate(expr.name);
         DataType right_type = evaluate(expr.value);
         if(!DataType.assignCompatible(left_type, right_type))
-            throw new TypeError( right_type + "could not be assigned to a " + left_type);
+            throw new TypeError( right_type + " could not be assigned to a " + left_type);
         expr.type = right_type;
         return right_type;
     }
 
     @Override
     public DataType visitBinaryExpr(ExprNode.Binary expr) {
-        DataType type = checkType(expr.left, expr.right);
+        DataType type = checkType(expr.left, expr.right,
+                "operand of binary expression should be number.");
         expr.type = type;
-        return type;
+        return expr.type;
     }
 
     @Override
     public DataType visitCallExpr(ExprNode.FunCall expr) {
-        DataType type;
-        for(ExprNode node : expr.arguments) {
-            type = evaluate(node);
+        String func_name = expr.name.lexeme;
 
+        DataType type = evaluate(expr.identifier);
+        if(type != DataType.FUNCTION)
+            throw new TypeError("'" + type + "'object is not callable");
+        Symbol symbol = scopes.get(func_name);
+        StmtNode.Function func = (StmtNode.Function)symbol.value;
+
+        if(expr.arguments.size() != func.params.size())
+            throw new TypeError(func_name + "() takes " + func.params.size() +
+                    " positional argument but " + expr.arguments.size() + " were given");
+
+        DataType arg_type, param_type;
+        for(int i=0; i<expr.arguments.size(); i++) {
+            arg_type = evaluate(expr.arguments.get(i));
+            param_type = DataType.tokenType2DataType.get(func.types.get(i).type);
+            if(arg_type != param_type)
+                throw new TypeError("expected " + param_type + " for " +
+                        i + "th parameter of " + func_name + "(), but " + arg_type + " were given");
         }
-//        return ;
+        return DataType.tokenType2DataType.get(func.return_type.type);
     }
 
     @Override
@@ -83,24 +111,30 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
         DataType left_type = evaluate(expr.left);
         DataType right_type = evaluate(expr.right);
         if(left_type != DataType.BOOL || right_type != DataType.BOOL)
-            throw new TypeError();
+            throw new TypeError("operand of logical expression should be boolean.");
         expr.type = left_type;
         return expr.type;
     }
 
     @Override
     public DataType visitRelationExpr(ExprNode.Relation expr) {
-        return null;
+        checkType(expr.left, expr.right,
+                "operand of relational expression should be number.");
+        expr.type = DataType.BOOL;
+        return expr.type;
     }
 
     @Override
     public DataType visitUnaryExpr(ExprNode.Unary expr) {
-        return null;
+        expr.type = evaluate(expr.right);
+        return expr.type;
     }
 
     @Override
     public DataType visitVariableExpr(ExprNode.Variable expr) {
-        return null;
+        Symbol symbol = scopes.get(expr.name.lexeme);
+        expr.declaration = (StmtNode) symbol.value;
+        return symbol.type;
     }
 
     // endregion
@@ -109,10 +143,12 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
 
     @Override
     public DataType visitBlockStmt(StmtNode.Block stmt) {
-        if(scope_type == null) scope.beginScope(Scope.Type.BLOCK);
-        for(StmtNode node : stmt.items)
-            node.accept(this);
-        if(scope_type == null) scope.endScope();
+        if(scope_type == null) scopes.beginScope(stmt, Scope.Type.BLOCK);
+        for(StmtNode node : stmt.items) {
+            execute(node);
+        }
+        // FIXME: bad implementation, it is better to put endscope, beginscope in the same function.
+        scopes.endScope();
         return null;
     }
 
@@ -125,13 +161,22 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
     @Override
     public DataType visitFunctionStmt(StmtNode.Function stmt) {
         this.scope_type = Scope.Type.FUNCTION;
-        scope.current.put(stmt.name.lexeme, new Symbol(DataType.FUNCTION, stmt));
+        scopes.current.put(stmt.name.lexeme, new Symbol(DataType.FUNCTION, stmt));
 
-        scope.beginScope(Scope.Type.FUNCTION);
+        scopes.beginScope(stmt, Scope.Type.FUNCTION);
         scope_type = Scope.Type.FUNCTION;
-        stmt.body.accept(this);
+
+        // Add arguments to current scope.
+        // FIXME: bad implementation?
+        for(int i=0; i<stmt.params.size(); i++) {
+            DataType type = DataType.tokenType2DataType.get(stmt.types.get(i).type);
+            scopes.current.put(stmt.params.get(i).lexeme, new Symbol(type, null));
+        }
+        // Execute body
+        execute(stmt.body);
+
         scope_type = null;
-        scope.endScope();
+//        scope.endScope();
 
         return null;
     }
@@ -142,18 +187,19 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
 
         stmt.cond.type = evaluate(stmt.cond);
 
-        scope.beginScope(Scope.Type.IF);
+        scopes.beginScope(stmt.if_body, Scope.Type.IF);
         scope_type = Scope.Type.IF;
-        stmt.if_body.accept(this);
+        execute(stmt.if_body);
         scope_type = null;
-        scope.endScope();
+//        scope.endScope();
 
         if(stmt.else_body != null) {
-            scope.beginScope(Scope.Type.IF);
-            scope_type = Scope.Type.IF;
-            stmt.else_body.accept(this);
+            this.scope_type = Scope.Type.ELSE;
+            scopes.beginScope(stmt.else_body, Scope.Type.ELSE);
+            scope_type = Scope.Type.ELSE;
+            execute(stmt.else_body);
             scope_type = null;
-            scope.endScope();
+//            scope.endScope();
         }
         return null;
     }
@@ -168,40 +214,77 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
     public DataType visitReturnStmt(StmtNode.Return stmt) {
         if(stmt.value != null)
             stmt.value.type = evaluate(stmt.value);
+
+        // type of return value should match the return type in function definition.
+        Scope scope = scopes.find(Scope.Type.FUNCTION);
+        if(scope == null)
+            throw new SyntaxError("'return' outside function");
+
+        StmtNode.Function func = (StmtNode.Function) scope.code;
+        if(func.return_type.type.toDataType() != stmt.value.type)
+            throw new TypeError("return type of function '"+func.name.lexeme +
+                    "' is " + func.return_type.lexeme + ", but " + stmt.value.type + " were given.");
+
+        stmt.func = scope.code;
         return null;
     }
 
     @Override
     public DataType visitVarStmt(StmtNode.Var stmt) {
+        // TODO: it is better to check if var has already defined before resolving declaration.
+        // Feature: type inference by initializer
+        DataType type;
+        DataType init_type = null;
+        if(stmt.initializer != null) init_type = evaluate(stmt.initializer);
+        if(stmt.type == null) type = init_type;
+        else type = DataType.tokenType2DataType.get(stmt.type.type);
+
+        // a little tricky here, if there is no initializer, then we must explicit declare type.
+        // so type should not be null.
+        if(type == null)
+            throw new TypeError("can not inference type of " + stmt.name.lexeme);
+
+        if(init_type != null && !DataType.assignCompatible(type, init_type))
+            throw new TypeError(init_type + " can not be assigned to " + type);
+
+        scopes.current.put(stmt.name.lexeme, new Symbol(type, stmt));
         return null;
     }
 
     @Override
     public DataType visitWhileStmt(StmtNode.While stmt) {
-        this.scope_type = Scope.Type.LOOP;
         stmt.cond.type = evaluate(stmt.cond);
 
-        scope.beginScope(Scope.Type.LOOP);
+        scopes.beginScope(stmt, Scope.Type.LOOP);
         scope_type = Scope.Type.LOOP;
-        stmt.body.accept(this);
+        execute(stmt.body);
         scope_type = null;
-        scope.endScope();
+//        scope.endScope();
 
         return null;
     }
 
     @Override
     public DataType visitBreakStmt(StmtNode.Break stmt) {
+        Scope scope = scopes.find(Scope.Type.LOOP);
+        if(scope == null)
+            throw new SyntaxError("'break' outside loop");
+        stmt.setLoop(scope.code);
         return null;
     }
 
     @Override
     public DataType visitContinueStmt(StmtNode.Continue stmt) {
+        Scope scope = scopes.find(Scope.Type.LOOP);
+        if(scope == null)
+            throw new SyntaxError("'continue' not properly in loop");
+        stmt.setLoop(scope.code);
         return null;
     }
 
     @Override
     public DataType visitEmptyStmt(StmtNode.Empty stmt) {
+        // TODO: warning
         return null;
     }
     // endregion
