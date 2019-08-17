@@ -1,10 +1,8 @@
-package compiler;
+package compiler.semantic;
 
 import compiler.error.NameError;
 import frontend.ast.StmtNode;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Stack;
 
 public class NestedScope {

@@ -1,4 +1,4 @@
-package compiler;
+package compiler.semantic;
 
 import frontend.DataType;
 import frontend.ast.Node;

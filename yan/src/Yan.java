@@ -1,4 +1,4 @@
-import compiler.Resolver;
+import compiler.semantic.Resolver;
 import error.ErrorCollector;
 import frontend.*;
 import frontend.ast.StmtNode;

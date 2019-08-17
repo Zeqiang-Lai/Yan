@@ -1,4 +1,4 @@
-package compiler;
+package compiler.semantic;
 
 import compiler.error.SyntaxError;
 import compiler.error.TypeError;
@@ -269,7 +269,7 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
         Scope scope = scopes.find(Scope.Type.LOOP);
         if(scope == null)
             throw new SyntaxError("'break' outside loop");
-        stmt.setLoop(scope.code);
+        stmt.loop = scope.code;
         return null;
     }
 
@@ -278,7 +278,7 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
         Scope scope = scopes.find(Scope.Type.LOOP);
         if(scope == null)
             throw new SyntaxError("'continue' not properly in loop");
-        stmt.setLoop(scope.code);
+        stmt.loop = scope.code;
         return null;
     }
 
