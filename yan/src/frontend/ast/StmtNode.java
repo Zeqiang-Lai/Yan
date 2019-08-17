@@ -1,5 +1,6 @@
 package frontend.ast;
 
+import frontend.DataType;
 import frontend.Token;
 
 import java.util.List;
@@ -47,11 +48,11 @@ public abstract class StmtNode extends Node{
     static public class Function extends StmtNode {
         public final Token name;
         public final List<Token> params;
-        public final List<Token> types;
-        public final Token return_type;
+        public final List<DataType> types;
+        public final DataType return_type;
         public final Block body;
 
-        public Function(Token name, List<Token> params, List<Token> types, Token return_type, Block body) {
+        public Function(Token name, List<Token> params, List<DataType> types, DataType return_type, Block body) {
             this.name = name;
             this.params = params;
             this.types = types;
@@ -68,9 +69,9 @@ public abstract class StmtNode extends Node{
     static public class Var extends StmtNode {
         public final Token name;
         public final ExprNode initializer;
-        public final Token type;
+        public DataType type;
 
-        public Var(Token name, ExprNode initializer, Token type) {
+        public Var(Token name, ExprNode initializer, DataType type) {
             this.name = name;
             this.initializer = initializer;
             this.type = type;
@@ -99,6 +100,9 @@ public abstract class StmtNode extends Node{
         public StmtNode if_body;
         public StmtNode else_body;
 
+        public String label_before_else;   // label before else
+        public String label_after_else;   // label after else
+
         public If(ExprNode cond, StmtNode if_body, StmtNode else_body) {
             this.cond = cond;
             this.if_body = if_body;
@@ -113,6 +117,9 @@ public abstract class StmtNode extends Node{
     public static class While extends StmtNode {
         public ExprNode cond;
         public StmtNode body;
+
+        public String label_before_while;   // label before while cond
+        public String label_after_while;   // label after while body
 
         public While(ExprNode cond, StmtNode body) {
             this.cond = cond;
@@ -147,11 +154,7 @@ public abstract class StmtNode extends Node{
     }
 
     public static class Break extends StmtNode {
-        private StmtNode loop;
-
-        public void setLoop(StmtNode loop) {
-            this.loop = loop;
-        }
+        public StmtNode.While loop;
 
         public <R> R accept(StmtNode.Visitor<R> visitor) {
             return visitor.visitBreakStmt(this);
@@ -159,11 +162,7 @@ public abstract class StmtNode extends Node{
     }
 
     public static class Continue extends StmtNode {
-        private StmtNode loop;
-
-        public void setLoop(StmtNode loop) {
-            this.loop = loop;
-        }
+        public StmtNode.While loop;
 
         public <R> R accept(StmtNode.Visitor<R> visitor) {
             return visitor.visitContinueStmt(this);

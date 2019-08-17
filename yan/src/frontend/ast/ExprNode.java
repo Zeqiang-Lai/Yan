@@ -2,6 +2,7 @@ package frontend.ast;
 
 import frontend.DataType;
 import frontend.Token;
+import frontend.TokenType;
 
 import java.util.List;
 
@@ -81,8 +82,7 @@ public abstract class ExprNode extends Node{
 
     public static class FunCall extends ExprNode {
 
-        public FunCall(Variable identifier, Token name, List<ExprNode> arguments) {
-            this.identifier = identifier;
+        public FunCall(Token name, List<ExprNode> arguments) {
             this.name = name;
             this.arguments = arguments;
         }
@@ -91,7 +91,6 @@ public abstract class ExprNode extends Node{
             return visitor.visitCallExpr(this);
         }
 
-        public final ExprNode.Variable identifier;
         public final Token name;
         public final List<ExprNode> arguments;
     }
@@ -160,6 +159,6 @@ public abstract class ExprNode extends Node{
         }
 
         public final Token name;
-        public StmtNode declaration;
+        public StmtNode.Var declaration;
     }
 }

@@ -1,3 +1,4 @@
+import compiler.ILGen;
 import compiler.semantic.Resolver;
 import error.ErrorCollector;
 import frontend.*;
@@ -36,6 +37,25 @@ public class Yan {
             }
             runner.runCompiler(source, out);
         }
+    }
+
+    private static String readFile(String path, Charset encoding) throws IOException {
+        byte[] encoded = Files.readAllBytes(Paths.get(path));
+        return new String(encoded, encoding);
+    }
+
+    private static void saveFile(String path, String content) throws IOException {
+        BufferedWriter writer = new BufferedWriter(new FileWriter(path));
+        writer.write(content);
+        writer.close();
+    }
+
+    private static void printUsage() {
+        String usage = "OVERVIEW: Yan Compiler\n\n" +
+                "USAGE: Yan [options] <input>\n\n" +
+                "OPTIONS:\n" +
+                "\t-o <file>\tWrite output to <file>.xml";
+        System.out.println(usage);
     }
 
     private void runCompiler(String source_path, String out) {
@@ -84,7 +104,25 @@ public class Yan {
         if (errorCollector.hasError()) {
             errorCollector.show();
         }
+
+        ILGen il_generator = new ILGen();
+        for(StmtNode stmt : statements) {
+            il_generator.gen(stmt);
+        }
+
+        if (errorCollector.hasError()) {
+            errorCollector.show();
+        }
+        String name = file_name.substring(0, file_name.lastIndexOf("."));
+        String out_path = Paths.get(f.getParent(), name + ".il").toString();
+        try {
+            saveFile(out_path, il_generator.get_il_code());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
+
+    // region interpreter
 
     private int countBrace(String line, int count) {
         for(int i=0; i<line.length(); ++i) {
@@ -176,16 +214,5 @@ public class Yan {
         }
     }
 
-    private static String readFile(String path, Charset encoding) throws IOException {
-        byte[] encoded = Files.readAllBytes(Paths.get(path));
-        return new String(encoded, encoding);
-    }
-
-    private static void printUsage() {
-        String usage = "OVERVIEW: Yan Compiler\n\n" +
-                "USAGE: Yan [options] <input>\n\n" +
-                "OPTIONS:\n" +
-                "\t-o <file>\tWrite output to <file>.xml";
-        System.out.println(usage);
-    }
+    // endregion
 }

@@ -71,10 +71,10 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
     public DataType visitCallExpr(ExprNode.FunCall expr) {
         String func_name = expr.name.lexeme;
 
-        DataType type = evaluate(expr.identifier);
-        if(type != DataType.FUNCTION)
-            throw new TypeError("'" + type + "'object is not callable");
         Symbol symbol = scopes.get(func_name);
+        if(symbol.type != DataType.FUNCTION)
+            throw new TypeError("'" + symbol.type + "'object is not callable");
+
         StmtNode.Function func = (StmtNode.Function)symbol.value;
 
         if(expr.arguments.size() != func.params.size())
@@ -84,12 +84,12 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
         DataType arg_type, param_type;
         for(int i=0; i<expr.arguments.size(); i++) {
             arg_type = evaluate(expr.arguments.get(i));
-            param_type = DataType.tokenType2DataType.get(func.types.get(i).type);
+            param_type = func.types.get(i);
             if(arg_type != param_type)
                 throw new TypeError("expected " + param_type + " for " +
                         i + "th parameter of " + func_name + "(), but " + arg_type + " were given");
         }
-        return DataType.tokenType2DataType.get(func.return_type.type);
+        return func.return_type;
     }
 
     @Override
@@ -100,10 +100,15 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
 
     @Override
     public DataType visitLiteralExpr(ExprNode.Literal expr) {
-        if(expr.value instanceof Double) return DataType.FLOAT;
-        if(expr.value instanceof Integer) return DataType.INT;
-        if(expr.value instanceof Boolean) return DataType.BOOL;
-        throw new TypeError("type of'"+expr.value+"' is not supported.");
+        DataType type = null;
+        if(expr.value instanceof Double) type = DataType.FLOAT;
+        if(expr.value instanceof Integer) type = DataType.INT;
+        if(expr.value instanceof Boolean) type = DataType.BOOL;
+
+        if(type == null)
+            throw new TypeError("type of'"+expr.value+"' is not supported.");
+        expr.type = type;
+        return type;
     }
 
     @Override
@@ -133,7 +138,11 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
     @Override
     public DataType visitVariableExpr(ExprNode.Variable expr) {
         Symbol symbol = scopes.get(expr.name.lexeme);
-        expr.declaration = (StmtNode) symbol.value;
+
+        if(!(symbol.value instanceof StmtNode.Var))
+            throw new TypeError(expr.name.lexeme + " is not a variable.");
+
+        expr.declaration = (StmtNode.Var) symbol.value;
         return symbol.type;
     }
 
@@ -169,8 +178,8 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
         // Add arguments to current scope.
         // FIXME: bad implementation?
         for(int i=0; i<stmt.params.size(); i++) {
-            DataType type = DataType.tokenType2DataType.get(stmt.types.get(i).type);
-            scopes.current.put(stmt.params.get(i).lexeme, new Symbol(type, null));
+            DataType type = stmt.types.get(i);
+            scopes.current.put(stmt.params.get(i).lexeme, new Symbol(type, new StmtNode.Var(null, null, null)));
         }
         // Execute body
         execute(stmt.body);
@@ -221,9 +230,9 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
             throw new SyntaxError("'return' outside function");
 
         StmtNode.Function func = (StmtNode.Function) scope.code;
-        if(func.return_type.type.toDataType() != stmt.value.type)
+        if(func.return_type != stmt.value.type)
             throw new TypeError("return type of function '"+func.name.lexeme +
-                    "' is " + func.return_type.lexeme + ", but " + stmt.value.type + " were given.");
+                    "' is " + func.return_type + ", but " + stmt.value.type + " were given.");
 
         stmt.func = scope.code;
         return null;
@@ -237,7 +246,7 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
         DataType init_type = null;
         if(stmt.initializer != null) init_type = evaluate(stmt.initializer);
         if(stmt.type == null) type = init_type;
-        else type = DataType.tokenType2DataType.get(stmt.type.type);
+        else type = stmt.type;
 
         // a little tricky here, if there is no initializer, then we must explicit declare type.
         // so type should not be null.
@@ -246,6 +255,8 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
 
         if(init_type != null && !DataType.assignCompatible(type, init_type))
             throw new TypeError(init_type + " can not be assigned to " + type);
+
+        stmt.type = type;
 
         scopes.current.put(stmt.name.lexeme, new Symbol(type, stmt));
         return null;
@@ -269,7 +280,7 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
         Scope scope = scopes.find(Scope.Type.LOOP);
         if(scope == null)
             throw new SyntaxError("'break' outside loop");
-        stmt.loop = scope.code;
+        stmt.loop = (StmtNode.While) scope.code;
         return null;
     }
 
@@ -278,7 +289,7 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
         Scope scope = scopes.find(Scope.Type.LOOP);
         if(scope == null)
             throw new SyntaxError("'continue' not properly in loop");
-        stmt.loop = scope.code;
+        stmt.loop = (StmtNode.While) scope.code;
         return null;
     }
 

@@ -6,6 +6,7 @@ import frontend.ast.ExprNode;
 import frontend.ast.StmtNode;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 
@@ -65,10 +66,13 @@ public class Parser {
 
     private StmtNode.Var parseVar() throws ParseError {
         Token name = consume(IDENTIFIER);
-        Token type = null;
+        DataType type = null;
         ExprNode initializer = null;
 
-        if (match(COLON)) type = consume(FLOAT, INT, CHAR, STRING, BOOL);
+        if (match(COLON)) {
+            Token tmp = consume(FLOAT, INT, CHAR, STRING, BOOL);
+            type = DataType.tokenType2DataType.get(tmp.type);
+        }
         if (match(ASSIGN)) initializer = parseExpression();
 
         consume(SEMICOLON);
@@ -80,7 +84,7 @@ public class Parser {
         Token name = consume(IDENTIFIER);
         consume(LEFT_PAREN);
         List<Token> params = new Vector<>();
-        List<Token> types = new Vector<>();
+        List<DataType> types = new Vector<>();
 
         if (!match(RIGHT_PAREN)) {
             do {
@@ -88,13 +92,16 @@ public class Parser {
                 consume(COLON);
                 Token type = consume(FLOAT, INT, CHAR, STRING, BOOL);
                 params.add(param);
-                types.add(type);
+                types.add(DataType.tokenType2DataType.get(type.type));
             } while (match(COMMA));
             consume(RIGHT_PAREN);
         }
 
-        Token return_type = null;
-        if (match(ARROW)) return_type = consume(FLOAT, INT, CHAR, STRING, BOOL);
+        DataType return_type = null;
+        if (match(ARROW)) {
+            Token type = consume(FLOAT, INT, CHAR, STRING, BOOL);
+            return_type = DataType.tokenType2DataType.get(type.type);
+        }
 
         StmtNode.Block body = parseBlock();
         return new StmtNode.Function(name, params, types, return_type, body);
@@ -108,6 +115,7 @@ public class Parser {
         if (match(BREAK)) return parseBreak();
         if (match(RETURN)) return parseReturn();
         if (match(PRINT)) return parsePrint();
+        if (match(SEMICOLON)) return new StmtNode.Empty();
         return parseExpressionStmt();
     }
 
@@ -195,13 +203,27 @@ public class Parser {
     private ExprNode parseAssignment() throws ParseError {
         ExprNode expr = parseLogicalOr();
 
-        if (match(ASSIGN, ADD_ASSIGN, DIV_ASSIGN, MULTI_ASSIGN, DIV_ASSIGN, MOD_ASSIGN)) {
+        if (match(ASSIGN, ADD_ASSIGN, SUB_ASSIGN, MULTI_ASSIGN, DIV_ASSIGN, MOD_ASSIGN)) {
             int assign = current - 1;
-            Token type = previous();
+            Token op = previous();
             ExprNode value = parseExpression();
+
             if (expr instanceof ExprNode.Variable) {
                 Token name = ((ExprNode.Variable) expr).name;
-                return new ExprNode.Assign(name, type, value);
+
+                if(op.type != ASSIGN) {
+                    TokenType tmp = null;
+                    switch(op.type) {
+                        case ADD_ASSIGN: tmp = ADD; break;
+                        case SUB_ASSIGN: tmp = SUB; break;
+                        case DIV_ASSIGN: tmp = DIV; break;
+                        case MULTI_ASSIGN: tmp = MULTI; break;
+                        case MOD_ASSIGN: tmp = MOD; break;
+                    }
+                    value = new ExprNode.Binary(expr, new Token(tmp, "", null, op.line), value);
+                }
+
+                return new ExprNode.Assign(name, new Token(ASSIGN, "=", null, op.line), value);
             }
             throw new ParseError(assign, "invalid assignment target", tokens, BEFORE);
         }
@@ -287,14 +309,14 @@ public class Parser {
 
             List<ExprNode> args = new Vector<>();
             if (match(RIGHT_PAREN)) {
-                return new ExprNode.FunCall((ExprNode.Variable) node, ((ExprNode.Variable)node).name, args);
+                return new ExprNode.FunCall(((ExprNode.Variable)node).name, args);
             }
             do {
                 ExprNode arg = parseAssignment();
                 args.add(arg);
             } while (match(COMMA));
             consume(RIGHT_PAREN);
-            return new ExprNode.FunCall((ExprNode.Variable) node, ((ExprNode.Variable)node).name, args);
+            return new ExprNode.FunCall(((ExprNode.Variable)node).name, args);
         }
 
         // Future: array sub

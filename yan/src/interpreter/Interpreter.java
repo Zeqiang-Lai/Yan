@@ -2,6 +2,7 @@ package interpreter;
 
 import error.ErrorCollector;
 import frontend.DataType;
+import frontend.Token;
 import interpreter.error.RuntimeError;
 import frontend.TokenType;
 import frontend.ast.ExprNode;
@@ -22,14 +23,14 @@ public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visito
     private boolean breakloop = false;
     private boolean exitBlock = false;
 
-    private final static Map<TokenType, YanObject> defalutValue = new HashMap<>();
+    private final static Map<DataType, YanObject> defalutValue = new HashMap<>();
 
 
     static {
-        defalutValue.put(INT, new YanObject(0, DataType.INT));
-        defalutValue.put(FLOAT, new YanObject(0, DataType.FLOAT));
-        defalutValue.put(STRING, new YanObject(0, DataType.STRING));
-        defalutValue.put(BOOL, new YanObject(0, DataType.BOOL));
+        defalutValue.put(DataType.INT, new YanObject(0, DataType.INT));
+        defalutValue.put(DataType.FLOAT, new YanObject(0, DataType.FLOAT));
+        defalutValue.put(DataType.STRING, new YanObject(0, DataType.STRING));
+        defalutValue.put(DataType.BOOL, new YanObject(0, DataType.BOOL));
     }
 
     public Interpreter() {
@@ -114,7 +115,7 @@ public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visito
     public YanObject visitBinaryExpr(ExprNode.Binary expr) {
         YanObject left = evaluate(expr.left);
         YanObject right = evaluate(expr.right);
-        TokenType op = expr.operator.type;
+        Token op = expr.operator;
 
         // should be number type.
         checkType(left.type, DataType.INT, DataType.FLOAT);
@@ -129,7 +130,7 @@ public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visito
         else
             result_type = DataType.INT;
 
-        switch (op) {
+        switch (op.type) {
             case ADD:
                 result = left_value + right_value; break;
             case SUB:
@@ -196,13 +197,13 @@ public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visito
     public YanObject visitLogicalExpr(ExprNode.Logical expr) {
         YanObject left = evaluate(expr.left);
         YanObject right = evaluate(expr.right);
-        TokenType op = expr.operator.type;
+        Token op = expr.operator;
 
         if(left.type != DataType.BOOL || right.type != DataType.BOOL)
             throw new RuntimeError(expr.operator,
                     "operands of relation operator should be able to be evaluated as bool");
         boolean result;
-        switch (op) {
+        switch (op.type) {
             case REL_AND:
                 result = (Boolean)left.value && (Boolean)right.value;
                 return new YanObject(result, DataType.BOOL);
@@ -217,7 +218,7 @@ public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visito
     public YanObject visitRelationExpr(ExprNode.Relation expr) {
         YanObject left = evaluate(expr.left);
         YanObject right = evaluate(expr.right);
-        TokenType op = expr.operator.type;
+        Token op = expr.operator;
 
         // should be number type.
         checkType(left.type, DataType.INT, DataType.FLOAT);
@@ -226,7 +227,7 @@ public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visito
         Double left_value = Double.valueOf(String.valueOf(left.value));
         Double right_value = Double.valueOf(String.valueOf(right.value));
 
-        switch (op) {
+        switch (op.type) {
             case GREATER:
                 return new YanObject(left_value > right_value, DataType.BOOL);
             case GREATER_EQUAL:
@@ -324,7 +325,7 @@ public class Interpreter implements ExprNode.Visitor<YanObject>, StmtNode.Visito
         if (stmt.initializer != null) {
             value = evaluate(stmt.initializer);
         } else {
-            value = defalutValue.get(stmt.type.type);
+            value = defalutValue.get(stmt.type);
         }
         environment.define(stmt.name.lexeme, value);
         return null;

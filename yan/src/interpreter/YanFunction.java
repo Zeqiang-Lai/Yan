@@ -20,7 +20,7 @@ public class YanFunction extends YanObject implements YanCallable{
         for(int i=0; i<arguments.size(); ++i) {
             if(!(checkType(arguments.get(i).type, i)))
                 throw new RuntimeError(null, "type not matched, expected " +
-                        function.types.get(i).lexeme + ", but got" + arguments.get(i).type);
+                        function.types.get(i) + ", but got" + arguments.get(i).type);
             environment.define(function.params.get(i).lexeme, arguments.get(i));
         }
         try {
@@ -40,7 +40,7 @@ public class YanFunction extends YanObject implements YanCallable{
 
     @Override
     public boolean checkType(DataType type, int idx) {
-        return type == DataType.tokenType2DataType.get(function.types.get(idx).type);
+        return type ==function.types.get(idx);
     }
 
     @Override
