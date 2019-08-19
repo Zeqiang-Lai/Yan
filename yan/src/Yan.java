@@ -11,6 +11,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Date;
 import java.util.List;
 import java.util.Vector;
 
@@ -174,6 +175,8 @@ public class Yan {
         final Interpreter interpreter = new Interpreter();
         InputStreamReader input = new InputStreamReader(System.in);
         BufferedReader reader = new BufferedReader(input);
+        Date date = new Date();
+        System.out.println("Yan 1.0.0 (default, "+date.toString()+")");
         while (true) {
             System.out.print(">>> ");
             run(interpreter, readConsole(reader), "<stdin>");
