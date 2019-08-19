@@ -54,6 +54,7 @@ public class ParseError extends BaseError {
         while (left >= 0 && tokens.get(left).line == token.line) left -= 1;
         left += 1;
         int right = parsed_amount;
+
         int col = 0;
         for (int i = left; i <= right; i++) {
             line.append(tokens.get(i).lexeme).append(" ");
@@ -61,7 +62,8 @@ public class ParseError extends BaseError {
                 col += tokens.get(i).lexeme.length() + 1;
         }
         builder.append(line.toString()).append("\n");
-        builder.append(" ".repeat(Math.max(0, col + 2)));
+        for(int i=0; i<Math.max(0, col + 2);i++)
+            builder.append(" ");
         if (type == ErrorType.AFTER)
             builder.append(" ");
 
