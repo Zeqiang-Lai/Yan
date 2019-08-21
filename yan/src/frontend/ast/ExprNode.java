@@ -93,6 +93,7 @@ public abstract class ExprNode extends Node{
 
         public final Token name;
         public final List<ExprNode> arguments;
+        public StmtNode.Function func;
     }
 
     public static class Grouping extends ExprNode {

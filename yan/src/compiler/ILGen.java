@@ -6,6 +6,7 @@ import frontend.TokenType;
 import frontend.ast.ExprNode;
 import frontend.ast.StmtNode;
 
+import javax.xml.crypto.Data;
 import java.util.Vector;
 
 public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String> {
@@ -26,6 +27,16 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
             this.init_value = init_value;
             this.is_param = is_param;
             this.is_constant = is_constant;
+        }
+
+        public boolean isString() {
+            return type == DataType.STRING;
+        }
+
+        public boolean isArithm() {
+            if(is_constant)
+                return false;
+            return !isString();
         }
 
         @Override
@@ -49,6 +60,14 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
             this.name = name;
             this.param_types = param_types;
             this.return_type = return_type;
+        }
+
+        public Vector<ILVar> getParameters() {
+
+        }
+
+        public Vector<ILVar> getLocalVar() {
+
         }
 
         @Override
@@ -117,7 +136,7 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
     }
     // endregion
 
-    // region Methods
+    // region Global Counting Variable
     private int label_count = 0;
     private int tmp_count = 0;
 
@@ -133,7 +152,7 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
 
     // endregion
 
-    private Vector<ILFunction> functions = new Vector<>();
+    public Vector<ILFunction> functions = new Vector<>();
     private ILFunction current_func;
 
     public ILGen() {
@@ -168,8 +187,19 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
         return node.accept(this);
     }
 
-    public Object gen(StmtNode node) {
-        return node.accept(this);
+    public void gen(StmtNode node) {
+         node.accept(this);
+    }
+
+    private String gen_type_conversion(String data, DataType from, DataType to) {
+        if(from == to)
+            return data;
+        ILOP op = ILOP.getConvertOP(from, to);
+        return emit(op, data, null);
+    }
+
+    private boolean isVar(String x) {
+        return x.startsWith("@tmp");
     }
     // endregion
 
@@ -179,24 +209,29 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
     @Override
     public String visitAssignExpr(ExprNode.Assign expr) {
         String value = gen(expr.value);
+        value = gen_type_conversion(value, expr.value.type, expr.type);
         return emit(ILOP.assign, value, null, expr.name.lexeme);
     }
 
     @Override
     public String visitBinaryExpr(ExprNode.Binary expr) {
         String left = gen(expr.left);
+        left = gen_type_conversion(left, expr.left.type, expr.type);
         String right = gen(expr.right);
+        right = gen_type_conversion(right, expr.right.type, expr.type);
+
         return emit(ILOP.valueOf(expr.operator.type),left, right);
     }
 
     @Override
     public String visitCallExpr(ExprNode.FunCall expr) {
         String name;
-        for(ExprNode arg : expr.arguments) {
-            name = gen(arg);
+        for(int i=0; i<expr.arguments.size(); i++) {
+            name = gen(expr.arguments.get(i));
+            name = gen_type_conversion(name, expr.arguments.get(i).type, expr.func.types.get(i));
             emit(ILOP.param, name, null, null);
         }
-        return emit(ILOP.call, expr.name.lexeme, null);
+        return emit(ILOP.call, expr.name.lexeme, String.valueOf(expr.arguments.size()));
     }
 
     @Override
@@ -210,25 +245,31 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
         String name = get_new_tmp();
         current_func.vars.add(new ILVar(expr.type, name, expr.value, false, true));
         return name;
+//        return expr.value.toString();
     }
 
     @Override
     public String visitLogicalExpr(ExprNode.Logical expr) {
         String left = gen(expr.left);
+        left = gen_type_conversion(left, expr.left.type, expr.type);
         String right = gen(expr.right);
+        right = gen_type_conversion(right, expr.right.type, expr.type);
         return emit(ILOP.valueOf(expr.operator.type),left, right);
     }
 
     @Override
     public String visitRelationExpr(ExprNode.Relation expr) {
         String left = gen(expr.left);
+        left = gen_type_conversion(left, expr.left.type, expr.type);
         String right = gen(expr.right);
+        right = gen_type_conversion(right, expr.right.type, expr.type);
         return emit(ILOP.valueOf(expr.operator.type),left, right);
     }
 
     @Override
     public String visitUnaryExpr(ExprNode.Unary expr) {
         String right = gen(expr.right);
+        right = gen_type_conversion(right, expr.right.type, expr.type);
         if(expr.operator.type == TokenType.REL_NOT)
             return emit(ILOP.not, right, null);
         else if(expr.operator.type == TokenType.SUB)
@@ -322,8 +363,12 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
         String result = null;
         if(stmt.initializer != null)
             result = gen(stmt.initializer);
+
+        // we don't generate assign op for constant initialization
+        if(result != null && !current_func.vars.lastElement().is_constant)
+            emit(ILOP.assign, result, null, stmt.name.lexeme);
+
         current_func.vars.add(new ILVar(stmt.type, stmt.name.lexeme, result, false, false));
-        emit(ILOP.assign, result, null, stmt.name.lexeme);
         return null;
     }
 

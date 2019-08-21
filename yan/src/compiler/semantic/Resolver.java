@@ -56,7 +56,7 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
         if(!DataType.assignCompatible(left_type, right_type))
             throw new TypeError( right_type + " could not be assigned to a " + left_type);
         expr.type = right_type;
-        return right_type;
+        return expr.type;
     }
 
     @Override
@@ -76,6 +76,7 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
             throw new TypeError("'" + symbol.type + "'object is not callable");
 
         StmtNode.Function func = (StmtNode.Function)symbol.value;
+        expr.func = func;
 
         if(expr.arguments.size() != func.params.size())
             throw new TypeError(func_name + "() takes " + func.params.size() +
@@ -89,7 +90,8 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
                 throw new TypeError("expected " + param_type + " for " +
                         i + "th parameter of " + func_name + "(), but " + arg_type + " were given");
         }
-        return func.return_type;
+        expr.type = func.return_type;
+        return expr.type;
     }
 
     @Override
@@ -108,7 +110,7 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
         if(type == null)
             throw new TypeError("type of'"+expr.value+"' is not supported.");
         expr.type = type;
-        return type;
+        return expr.type;
     }
 
     @Override
@@ -143,7 +145,8 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
             throw new TypeError(expr.name.lexeme + " is not a variable.");
 
         expr.declaration = (StmtNode.Var) symbol.value;
-        return symbol.type;
+        expr.type = expr.declaration.type;
+        return expr.type;
     }
 
     // endregion
@@ -179,7 +182,7 @@ public class Resolver implements StmtNode.Visitor<DataType>, ExprNode.Visitor<Da
         // FIXME: bad implementation?
         for(int i=0; i<stmt.params.size(); i++) {
             DataType type = stmt.types.get(i);
-            scopes.current.put(stmt.params.get(i).lexeme, new Symbol(type, new StmtNode.Var(null, null, null)));
+            scopes.current.put(stmt.params.get(i).lexeme, new Symbol(type, new StmtNode.Var(stmt.params.get(i), null, type)));
         }
         // Execute body
         execute(stmt.body);

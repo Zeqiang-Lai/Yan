@@ -73,6 +73,7 @@ public class Yan {
         ErrorCollector errorCollector = ErrorCollector.getInstance();
         errorCollector.setFile_name(file_name);
 
+        /* Lexical Analysis */
         Vector<Token> tokens = new Vector<>();
         assert source != null;
         SourceBuffer buff = new SourceBuffer(source);
@@ -88,6 +89,7 @@ public class Yan {
             return;
         }
 
+        /* Grammar Parsing */
         Parser parser = new Parser(tokens);
         List<StmtNode> statements = parser.parse();
 
@@ -96,6 +98,7 @@ public class Yan {
             return;
         }
 
+        /* Semantic Analysis */
         Resolver resolver = new Resolver();
         for(StmtNode stmt : statements) {
             resolver.execute(stmt);
@@ -105,6 +108,7 @@ public class Yan {
             errorCollector.show();
         }
 
+        /* Intermediate Code Generation */
         ILGen il_generator = new ILGen();
         for(StmtNode stmt : statements) {
             il_generator.gen(stmt);
@@ -120,6 +124,8 @@ public class Yan {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+
     }
 
     // region interpreter

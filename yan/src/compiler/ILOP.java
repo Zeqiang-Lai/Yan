@@ -1,5 +1,6 @@
 package compiler;
 
+import frontend.DataType;
 import frontend.TokenType;
 
 import java.util.HashMap;
@@ -21,7 +22,11 @@ public enum ILOP {
 
     jf,jt,jmp,
     print,
-    label;
+    label,
+
+    // type conversion
+    i2f,f2i,b2i,i2b
+    ;
 
     static int max_length = 5;
 
@@ -44,5 +49,13 @@ public enum ILOP {
 
     static ILOP valueOf(TokenType type) {
         return type2op.get(type);
+    }
+
+    static ILOP getConvertOP(DataType from, DataType to) {
+        if(from == DataType.INT && to == DataType.FLOAT) return i2f;
+        if(from == DataType.FLOAT && to == DataType.INT) return f2i;
+        if(from == DataType.BOOL && to == DataType.INT) return b2i;
+        if(from == DataType.INT && to == DataType.BOOL) return i2b;
+        throw new RuntimeException("invalid conversion " + from + " " + to);
     }
 }
