@@ -25,81 +25,81 @@ Signature: func main()
 
 .Data
 a: INT = null
-@tmp2: INT = 10 [constant]
-@tmp3: INT = 10 [constant]
-b: INT = @tmp3
-@tmp5: INT = 10 [constant]
-@tmp7: INT = 2 [constant]
-@tmp9: INT = 3 [constant]
-@tmp16: INT = 10 [constant]
-@tmp24: INT = 0 [constant]
-@tmp28: INT = 0 [constant]
-@tmp33: INT = 2 [constant]
-@tmp39: INT = 0 [constant]
-@tmp47: INT = 0 [constant]
-@tmp50: INT = 1 [constant]
-@tmp53: INT = 0 [constant]
-@tmp56: INT = 10 [constant]
-c: INT = @tmp58
+@const1: INT = 10 [constant]
+@const2: INT = 10 [constant]
+b: INT = @const2
+@const3: INT = 10 [constant]
+@const4: INT = 2 [constant]
+@const5: INT = 3 [constant]
+@const6: INT = 10 [constant]
+@const7: INT = 0 [constant]
+@const8: INT = 0 [constant]
+@const9: INT = 2 [constant]
+@const10: INT = 0 [constant]
+@const11: INT = 0 [constant]
+@const12: INT = 1 [constant]
+@const13: INT = 0 [constant]
+@const14: INT = 10 [constant]
+c: INT = @tmp1
 
 .Text
-assign @tmp2, a
-add a, b, @tmp4
-sub @tmp4, @tmp5, @tmp6
-div @tmp6, @tmp7, @tmp8
-multi @tmp8, @tmp9, @tmp10
-multi a, b, @tmp11
+assign @const1, a
+add a, b, @tmp1
+sub @tmp1, @const3, @tmp1
+div @tmp1, @const4, @tmp1
+multi @tmp1, @const5, @tmp1
+multi a, b, @tmp2
 param a 
 param b 
-call add, 2, @tmp12
-add @tmp11, @tmp12, @tmp13
-add @tmp10, @tmp13, @tmp14
-assign @tmp14, b
-i2b a, @tmp15
-i2b @tmp16, @tmp17
-equ @tmp15, @tmp17, @tmp18
-jf @tmp18, @label1
-add a, b, @tmp19
-print @tmp19 
+call add, 2, @tmp3
+add @tmp2, @tmp3, @tmp2
+add @tmp1, @tmp2, @tmp1
+assign @tmp1, b
+i2b a, @tmp1
+i2b @const6, @tmp2
+equ @tmp1, @tmp2, @tmp1
+jf @tmp1, @label1
+add a, b, @tmp1
+print @tmp1 
 label @label1 
-i2b a, @tmp20
-i2b b, @tmp21
-nequ @tmp20, @tmp21, @tmp22
-jf @tmp22, @label3
+i2b a, @tmp1
+i2b b, @tmp2
+nequ @tmp1, @tmp2, @tmp1
+jf @tmp1, @label3
 print a 
 label @label3 
-i2b a, @tmp23
-i2b @tmp24, @tmp25
-equ @tmp23, @tmp25, @tmp26
-i2b b, @tmp27
-i2b @tmp28, @tmp29
-g @tmp27, @tmp29, @tmp30
-and @tmp26, @tmp30, @tmp31
-i2b b, @tmp32
-neg @tmp33, @tmp34
-i2b @tmp34, @tmp35
-equ @tmp32, @tmp35, @tmp36
-or @tmp31, @tmp36, @tmp37
-jf @tmp37, @label5
+i2b a, @tmp1
+i2b @const7, @tmp2
+equ @tmp1, @tmp2, @tmp1
+i2b b, @tmp2
+i2b @const8, @tmp3
+g @tmp2, @tmp3, @tmp2
+and @tmp1, @tmp2, @tmp1
+i2b b, @tmp2
+neg @const9, @tmp3
+i2b @tmp3, @tmp3
+equ @tmp2, @tmp3, @tmp2
+or @tmp1, @tmp2, @tmp1
+jf @tmp1, @label5
 label @label5 
-i2b a, @tmp38
-i2b @tmp39, @tmp40
-equ @tmp38, @tmp40, @tmp41
-not @tmp41, @tmp42
-jf @tmp42, @label7
+i2b a, @tmp1
+i2b @const10, @tmp2
+equ @tmp1, @tmp2, @tmp1
+not @tmp1, @tmp1
+jf @tmp1, @label7
 label @label7 
-i2b a, @tmp43
-i2b b, @tmp44
-g @tmp43, @tmp44, @tmp45
-jf @tmp45, @label9
+i2b a, @tmp1
+i2b b, @tmp2
+g @tmp1, @tmp2, @tmp1
+jf @tmp1, @label9
 print a 
 label @label11 
-i2b a, @tmp46
-i2b @tmp47, @tmp48
-g @tmp46, @tmp48, @tmp49
-jf @tmp49, @label12
-sub a, @tmp50, @tmp51
-assign @tmp51, a
+i2b a, @tmp1
+i2b @const11, @tmp2
+g @tmp1, @tmp2, @tmp1
+jf @tmp1, @label12
+sub a, @const12, @tmp1
+assign @tmp1, a
 jmp @label11 
 jmp @label11 
 label @label12 
@@ -107,19 +107,19 @@ jmp @label10
 label @label9 
 print b 
 label @label13 
-i2b b, @tmp52
-i2b @tmp53, @tmp54
-g @tmp52, @tmp54, @tmp55
-jf @tmp55, @label14
-multi b, @tmp56, @tmp57
-assign @tmp57, b
+i2b b, @tmp1
+i2b @const13, @tmp2
+g @tmp1, @tmp2, @tmp1
+jf @tmp1, @label14
+multi b, @const14, @tmp1
+assign @tmp1, b
 jmp @label14 
 jmp @label13 
 label @label14 
 label @label10 
 param a 
 param b 
-call add, 2, @tmp58
+call add, 2, @tmp1
 
 [End Function main]
 

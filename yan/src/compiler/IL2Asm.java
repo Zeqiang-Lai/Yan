@@ -1,12 +1,12 @@
 package compiler;
 
-public class AsmGen {
+public class IL2Asm {
     ILGen il_generator;
     String filename;
 
     StringBuilder asm_code;
 
-    public AsmGen(ILGen il_generator, String filename) {
+    public IL2Asm(ILGen il_generator, String filename) {
         this.il_generator = il_generator;
         this.filename = filename;
         asm_code = new StringBuilder();
