@@ -63,11 +63,11 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
         }
 
         public Vector<ILVar> getParameters() {
-
+            return null;
         }
 
         public Vector<ILVar> getLocalVar() {
-
+            return null;
         }
 
         @Override
