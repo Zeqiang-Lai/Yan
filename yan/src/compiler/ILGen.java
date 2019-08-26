@@ -34,16 +34,16 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
         }
 
         public boolean isArithm() {
-            if(is_constant)
+            if (is_constant)
                 return false;
             return !isString();
         }
 
         @Override
         public String toString() {
-            if(is_constant)
+            if (is_constant)
                 return name + ": " + type + " = " + init_value + " [constant]";
-            if(is_param)
+            if (is_param)
                 return name + ": " + type + " [parameter]";
             return name + ": " + type + " = " + init_value;
         }
@@ -74,7 +74,7 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
         public String toString() {
             StringBuilder builder = new StringBuilder();
             builder.append("func ").append(name).append('(');
-            if(param_types != null) {
+            if (param_types != null) {
                 boolean first = true;
                 for (DataType type : param_types) {
                     if (first) {
@@ -84,7 +84,7 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
                 }
             }
             builder.append(")");
-            if(return_type != null)
+            if (return_type != null)
                 builder.append(" -> ").append(return_type);
             return builder.toString();
         }
@@ -94,11 +94,11 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
             builder.append("[Begin Function ").append(name).append("]\n");
             builder.append("Signature: ").append(toString()).append('\n');
             builder.append("\n").append(".Data").append('\n');
-            for(ILVar var : vars)
+            for (ILVar var : vars)
                 builder.append(var).append('\n');
 
             builder.append("\n").append(".Text").append('\n');
-            for(Command cmd : commands)
+            for (Command cmd : commands)
                 builder.append(cmd).append('\n');
             builder.append('\n').append("[End Function ").append(name).append("]\n");
             return builder.toString();
@@ -123,14 +123,14 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
             StringBuilder builder = new StringBuilder();
             builder.append(op).append(' ');
 
-            if(arg1 != null)
+            if (arg1 != null)
                 builder.append(arg1).append(", ");
-            if(arg2 != null)
+            if (arg2 != null)
                 builder.append(arg2).append(", ");
-            if(result != null)
+            if (result != null)
                 builder.append(result);
-            if(builder.charAt(builder.length()-1) == ' ')
-                builder.delete(builder.length()-2, builder.length()-1);
+            if (builder.charAt(builder.length() - 1) == ' ')
+                builder.delete(builder.length() - 2, builder.length() - 1);
             return builder.toString();
         }
     }
@@ -139,6 +139,7 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
     // region Global Counting Variable
     private int label_count = 0;
     private int tmp_count = 0;
+    private int const_count = 0;
 
     private String get_new_label() {
         label_count += 1;
@@ -150,19 +151,30 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
         return "@tmp" + tmp_count;
     }
 
+    private void back_tmp(String... tmps) {
+        for (String tmp : tmps) {
+            if (tmp.startsWith("@tmp"))
+                tmp_count -= 1;
+        }
+    }
+
+    private String get_new_const() {
+        const_count += 1;
+        return "@const" + const_count;
+    }
     // endregion
 
     public Vector<ILFunction> functions = new Vector<>();
     private ILFunction current_func;
 
     public ILGen() {
-        functions.add(new ILFunction("@global",null, null));
+        functions.add(new ILFunction("@global", null, null));
         current_func = functions.lastElement();
     }
 
     public String get_il_code() {
         StringBuilder builder = new StringBuilder();
-        for(ILFunction func : functions)
+        for (ILFunction func : functions)
             builder.append(func.toText()).append('\n');
         return builder.toString();
     }
@@ -188,13 +200,15 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
     }
 
     public void gen(StmtNode node) {
-         node.accept(this);
+        node.accept(this);
     }
 
     private String gen_type_conversion(String data, DataType from, DataType to) {
-        if(from == to)
+        if (from == to)
             return data;
         ILOP op = ILOP.getConvertOP(from, to);
+
+        back_tmp(data);
         return emit(op, data, null);
     }
 
@@ -210,6 +224,8 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
     public String visitAssignExpr(ExprNode.Assign expr) {
         String value = gen(expr.value);
         value = gen_type_conversion(value, expr.value.type, expr.type);
+
+        back_tmp(value);
         return emit(ILOP.assign, value, null, expr.name.lexeme);
     }
 
@@ -220,13 +236,14 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
         String right = gen(expr.right);
         right = gen_type_conversion(right, expr.right.type, expr.type);
 
-        return emit(ILOP.valueOf(expr.operator.type),left, right);
+        back_tmp(left, right);
+        return emit(ILOP.valueOf(expr.operator.type), left, right);
     }
 
     @Override
     public String visitCallExpr(ExprNode.FunCall expr) {
         String name;
-        for(int i=0; i<expr.arguments.size(); i++) {
+        for (int i = 0; i < expr.arguments.size(); i++) {
             name = gen(expr.arguments.get(i));
             name = gen_type_conversion(name, expr.arguments.get(i).type, expr.func.types.get(i));
             emit(ILOP.param, name, null, null);
@@ -242,7 +259,7 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
     @Override
     public String visitLiteralExpr(ExprNode.Literal expr) {
         // TODO: temp
-        String name = get_new_tmp();
+        String name = get_new_const();
         current_func.vars.add(new ILVar(expr.type, name, expr.value, false, true));
         return name;
 //        return expr.value.toString();
@@ -254,7 +271,9 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
         left = gen_type_conversion(left, expr.left.type, expr.type);
         String right = gen(expr.right);
         right = gen_type_conversion(right, expr.right.type, expr.type);
-        return emit(ILOP.valueOf(expr.operator.type),left, right);
+
+        back_tmp(left, right);
+        return emit(ILOP.valueOf(expr.operator.type), left, right);
     }
 
     @Override
@@ -263,16 +282,20 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
         left = gen_type_conversion(left, expr.left.type, expr.type);
         String right = gen(expr.right);
         right = gen_type_conversion(right, expr.right.type, expr.type);
-        return emit(ILOP.valueOf(expr.operator.type),left, right);
+
+        back_tmp(left, right);
+        return emit(ILOP.valueOf(expr.operator.type), left, right);
     }
 
     @Override
     public String visitUnaryExpr(ExprNode.Unary expr) {
         String right = gen(expr.right);
         right = gen_type_conversion(right, expr.right.type, expr.type);
-        if(expr.operator.type == TokenType.REL_NOT)
+
+        back_tmp(right);
+        if (expr.operator.type == TokenType.REL_NOT)
             return emit(ILOP.not, right, null);
-        else if(expr.operator.type == TokenType.SUB)
+        else if (expr.operator.type == TokenType.SUB)
             return emit(ILOP.neg, right, null);
         else
             throw new RuntimeException("Invalid unary operator" + expr.operator);
@@ -289,7 +312,7 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
 
     @Override
     public Object visitBlockStmt(StmtNode.Block stmt) {
-        for(StmtNode st : stmt.items)
+        for (StmtNode st : stmt.items)
             gen(st);
         return null;
     }
@@ -312,7 +335,7 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
         current_func = functions.lastElement();
 
         // add parameters
-        for(int i=0; i<stmt.params.size(); i++) {
+        for (int i = 0; i < stmt.params.size(); i++) {
             current_func.vars.add(new ILVar(stmt.types.get(i), stmt.params.get(i).lexeme,
                     null, true, false));
         }
@@ -329,13 +352,15 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
         String cond = gen(stmt.cond);
         emit(ILOP.jf, cond, null, stmt.label_before_else);
 
+        back_tmp(cond);
+
         gen(stmt.if_body);
-        if(stmt.else_body != null)
+        if (stmt.else_body != null)
             emit(ILOP.jmp, null, null, stmt.label_after_else);
 
         emit(ILOP.label, stmt.label_before_else);
 
-        if(stmt.else_body != null) {
+        if (stmt.else_body != null) {
             gen(stmt.else_body);
             emit(ILOP.label, stmt.label_after_else);
         }
@@ -346,26 +371,28 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
     public Object visitPrintStmt(StmtNode.Print stmt) {
         String result = gen(stmt.value);
         emit(ILOP.print, result);
+        back_tmp(result);
         return null;
     }
 
     @Override
     public Object visitReturnStmt(StmtNode.Return stmt) {
         String result = null;
-        if(stmt.value != null)
+        if (stmt.value != null)
             result = gen(stmt.value);
         emit(ILOP.ret, result);
+        back_tmp(result);
         return result;
     }
 
     @Override
     public Object visitVarStmt(StmtNode.Var stmt) {
         String result = null;
-        if(stmt.initializer != null)
+        if (stmt.initializer != null)
             result = gen(stmt.initializer);
 
         // we don't generate assign op for constant initialization
-        if(result != null && !current_func.vars.lastElement().is_constant)
+        if (result != null && !current_func.vars.lastElement().is_constant)
             emit(ILOP.assign, result, null, stmt.name.lexeme);
 
         current_func.vars.add(new ILVar(stmt.type, stmt.name.lexeme, result, false, false));
@@ -382,6 +409,7 @@ public class ILGen implements StmtNode.Visitor<Object>, ExprNode.Visitor<String>
         String cond = gen(stmt.cond);
         emit(ILOP.jf, cond, null, stmt.label_after_while);
 
+        back_tmp(cond);
         gen(stmt.body);
 
         emit(ILOP.jmp, stmt.label_before_while);
