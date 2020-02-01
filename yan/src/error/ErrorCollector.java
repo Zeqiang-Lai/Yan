@@ -11,9 +11,10 @@ public class ErrorCollector {
     // region singleton pattern
     private static ErrorCollector instance = new ErrorCollector();
 
-    private ErrorCollector(){}
+    private ErrorCollector() {
+    }
 
-    public static ErrorCollector getInstance(){
+    public static ErrorCollector getInstance() {
         return instance;
     }
     // endregion
@@ -32,12 +33,23 @@ public class ErrorCollector {
 
     public void show() {
         String bold_color = "\033[1m";
-        for(BaseError error : errors) {
+        for (BaseError error : errors) {
             String msg = bold_color + file_name + ":" +
                     error.description;
             System.out.println(msg);
         }
         System.out.println(errors.size() + " errors generated.");
+    }
+
+    public String summary() {
+        StringBuilder builder = new StringBuilder();
+        for (BaseError error : errors) {
+            String msg = file_name + ":" +
+                    error.description;
+            builder.append(msg).append("\n");
+        }
+        builder.append(errors.size() + " errors generated.");
+        return builder.toString();
     }
 
     public void clear() {

@@ -5,6 +5,7 @@ import frontend.*;
 import frontend.ast.StmtNode;
 import interpreter.Interpreter;
 import interpreter.error.RuntimeError;
+import repl.Repl;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -178,49 +179,7 @@ public class Yan {
     }
 
     private void runInterpreter() throws IOException {
-        final Interpreter interpreter = new Interpreter();
-        InputStreamReader input = new InputStreamReader(System.in);
-        BufferedReader reader = new BufferedReader(input);
-        Date date = new Date();
-        System.out.println("Yan 1.0.0 (default, "+date.toString()+")");
-        while (true) {
-            System.out.print(">>> ");
-            run(interpreter, readConsole(reader), "<stdin>");
-        }
-    }
-
-    private void run(Interpreter interpreter, String source, String file_name) {
-        ErrorCollector errorCollector = ErrorCollector.getInstance();
-        errorCollector.clear();
-        errorCollector.setFile_name(file_name);
-
-        Vector<Token> tokens = new Vector<>();
-        assert source != null;
-        SourceBuffer buff = new SourceBuffer(source);
-        Lexer lexer = new Lexer(buff);
-        Token token = lexer.scan();
-        while (token.type != TokenType.EOF) {
-            tokens.add(token);
-            token = lexer.scan();
-        }
-
-        if (errorCollector.hasError()) {
-            errorCollector.show();
-            return;
-        }
-
-        Parser parser = new Parser(tokens);
-        List<StmtNode> statements = parser.parse();
-
-        if (errorCollector.hasError()) {
-            errorCollector.show();
-            return;
-        }
-        interpreter.interpret(statements);
-
-        if (errorCollector.hasError()) {
-            errorCollector.show();
-        }
+        Repl.run();
     }
 
     // endregion
