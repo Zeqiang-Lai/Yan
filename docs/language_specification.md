@@ -14,7 +14,7 @@ declaration -> funcDecl
 						 | statement
 funcDecl -> "func" IDENTIFIER "(" parameters ")" ["->" type] block
 varDecl -> "var" IDENTIFIER ":" type ["=" expression] ";"
-type -> "float" | "int" | "string" | "bool"
+type -> "float" | "int" | "string" | "bool" | "char"
 parameters -> IDENTIFIER: type
 ```
 
@@ -32,9 +32,9 @@ statement -> block
 					 | printStmt
 ifStmt -> "if" "(" expression ")" "{" block "}" ["else" block ]
 whileStmt -> "while" "(" expression ")"  block
-## forStmt -> for(varDecl|exprStmt expression; expression) block
+forStmt -> "for" "("varDecl|exprStmt";" expression";" expression")" block
 exprStmt -> expression ";"
-returnStmt -> "return" ";"
+returnStmt -> "return" [expression] ";"
 continueStmt -> "continue" ";"
 breakStmt -> "break" ";"
 block -> "{" statement* "}"
@@ -52,9 +52,10 @@ logic_and -> equality ("&&" equality)*
 equality -> comparison (("!=" | "==") comparison)*
 comparison -> addition ((">=" | ">" | "<" | "<=") addition)*
 addition -> multiplication (("+" | "-") multiplication)*
-multiplication -> unary (("*" | "/") unary)*
+multiplication -> cast (("*" | "/") cast)*
+cast -> ("(" type-name ")") unary
 unary -> ("!" | "-") unary | call
-call -> primary "("arguments?")"
+call -> primary "(" [arguments] ")"
 primary -> "true" | "false" 
 				 | NUMBER | STRING | IDENTIFIER | "("expression")"
 arguments -> expression ("," expression)* 
@@ -66,8 +67,9 @@ arguments -> expression ("," expression)*
 IDENTIFIER -> ALPHA (ALPHA | DIGIT)*
 ALPHA -> a-z | A-Z | _
 DIGIT -> 0-9
-STRING -> "any char except ""
+STRING -> " any char except " "
 NUMBER -> DIGIT+ [.DIGIT+]
-## COMMENT -> "//"
+LINE_COMMENT -> "//" any character
+BLOCK_COMMENT ->. "/*"any character "*/"
 ```
 
